@@ -24,6 +24,41 @@ ul.task-list li input[type="checkbox"] {
   vertical-align: middle;
 }
 .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -140,7 +175,372 @@ document.addEventListener('DOMContentLoaded', function () {
 
 <section id="assignment-3-acs-via-tidycensus" class="assignment-report">
 <h1>Assignment 3: ACS via tidycensus</h1>
-<p>This assignment has not yet been completed.</p>
+<p><strong>Income and Poverty across Texas Counties</strong><br>
+EPPS 6302 — Methods of Data Collection and Production | Fall 2026</p>
+<h2 id="data-and-variables" class="anchored">1. Data and Variables</h2>
+<p>Source: U.S. Census Bureau, 2024 ACS 5-year estimates (2020–2024), retrieved November 26, 2026, at 17:06:33 CST. The dataset contains 254 Texas counties, with one observation per county and no missing estimates or margins of error (MOEs).</p>
+<table class="caption-top">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Variable</th>
+<th style="text-align: left;">ACS code</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Median household income (2024 dollars)</td>
+<td style="text-align: left;"><code>B19013_001</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Population below poverty level</td>
+<td style="text-align: left;"><code>B17001_002</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Population for whom poverty status is determined</td>
+<td style="text-align: left;"><code>B17001_001</code></td>
+</tr>
+</tbody>
+</table>
+<div class="cell">
+<details class="code-fold">
+<summary>Show R code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidycensus)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tigris)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sf)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyr)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">tigris_use_cache =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>my_vars <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="at">income =</span> <span class="st">"B19013_001"</span>, <span class="at">pov =</span> <span class="st">"B17001_002"</span>,</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>             <span class="at">povden =</span> <span class="st">"B17001_001"</span>)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>vars <span class="ot">&lt;-</span> <span class="fu">load_variables</span>(<span class="dv">2024</span>, <span class="st">"acs5"</span>)</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>vars <span class="sc">|&gt;</span> <span class="fu">filter</span>(name <span class="sc">%in%</span> <span class="fu">unname</span>(my_vars))</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="co"># The API key is configured locally in .Renviron.</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="co"># This acquisition block is not executed when rendering.</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>data_dir <span class="ot">&lt;-</span> <span class="st">"data/assignment03"</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="fu">dir.create</span>(data_dir, <span class="at">recursive =</span> <span class="cn">TRUE</span>, <span class="at">showWarnings =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>raw_file <span class="ot">&lt;-</span> <span class="fu">file.path</span>(data_dir, <span class="st">"acs_TX_2024_raw.rds"</span>)</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">file.exists</span>(raw_file)) {</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>  retrieval_time <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>()</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>  acs_raw <span class="ot">&lt;-</span> <span class="fu">get_acs</span>(</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">geography =</span> <span class="st">"county"</span>, <span class="at">state =</span> <span class="st">"TX"</span>, <span class="at">variables =</span> my_vars,</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">year =</span> <span class="dv">2024</span>, <span class="at">survey =</span> <span class="st">"acs5"</span>, <span class="at">geometry =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">output =</span> <span class="st">"wide"</span>, <span class="at">moe_level =</span> <span class="dv">90</span>,</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">key =</span> <span class="fu">Sys.getenv</span>(<span class="st">"CENSUS_API_KEY"</span>)</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">saveRDS</span>(acs_raw, raw_file)</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">writeLines</span>(<span class="fu">format</span>(retrieval_time, <span class="at">tz =</span> <span class="st">"America/Chicago"</span>, <span class="at">usetz =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>             <span class="fu">file.path</span>(data_dir, <span class="st">"retrieval_time.txt"</span>))</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Show R code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidycensus)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sf)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Render from the archived download, without calling the API.</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>data_dir <span class="ot">&lt;-</span> <span class="st">"data/assignment03"</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>acs_raw <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="fu">file.path</span>(data_dir, <span class="st">"acs_TX_2024_raw.rds"</span>))</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">inherits</span>(acs_raw, <span class="st">"sf"</span>), <span class="fu">nrow</span>(acs_raw) <span class="sc">==</span> <span class="dv">254</span>,</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>          <span class="fu">anyDuplicated</span>(acs_raw<span class="sc">$</span>GEOID) <span class="sc">==</span> <span class="dv">0</span>,</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>          <span class="fu">all</span>(acs_raw<span class="sc">$</span>povdenE <span class="sc">&gt;</span> <span class="dv">0</span>))</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>acs_wide <span class="ot">&lt;-</span> acs_raw <span class="sc">|&gt;</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">pov_rate =</span> povE <span class="sc">/</span> povdenE,</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">pov_moe =</span> <span class="fu">moe_prop</span>(povE, povdenE, povM, povdenM),</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">poverty_pct =</span> <span class="dv">100</span> <span class="sc">*</span> pov_rate,</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">poverty_moe =</span> <span class="dv">100</span> <span class="sc">*</span> pov_moe,</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">ci_lower =</span> <span class="fu">pmax</span>(<span class="dv">0</span>, poverty_pct <span class="sc">-</span> poverty_moe),</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">ci_upper =</span> <span class="fu">pmin</span>(<span class="dv">100</span>, poverty_pct <span class="sc">+</span> poverty_moe)</span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>county_data <span class="ot">&lt;-</span> <span class="fu">as_tibble</span>(<span class="fu">st_drop_geometry</span>(acs_wide))</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="fu">is.finite</span>(county_data<span class="sc">$</span>poverty_pct)),</span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>          <span class="fu">all</span>(<span class="fu">is.finite</span>(county_data<span class="sc">$</span>poverty_moe)))</span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a><span class="co"># A tidy CSV with one row per county is already archived.</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a><span class="co"># write_csv(county_data, file.path(data_dir, "acs_TX_2024.csv"))</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<h2 id="choropleth-map-median-household-income" class="anchored">2. Choropleth Map: Median Household Income</h2>
+<div class="cell">
+<details class="code-fold">
+<summary>Show R code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(acs_wide) <span class="sc">+</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">fill =</span> incomeE), <span class="at">color =</span> <span class="st">"white"</span>, <span class="at">linewidth =</span> <span class="fl">0.08</span>) <span class="sc">+</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_viridis_c</span>(</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">labels =</span> scales<span class="sc">::</span><span class="fu">label_dollar</span>(),</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">name =</span> <span class="st">"Median household</span><span class="sc">\n</span><span class="st">income (USD)"</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Median Household Income across Texas Counties"</span>,</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"2020–2024 American Community Survey"</span>,</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>       <span class="at">caption =</span> <span class="st">"Source: U.S. Census Bureau, ACS 2024 5-year estimates."</span>) <span class="sc">+</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>() <span class="sc">+</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">16</span>, <span class="at">face =</span> <span class="st">"bold"</span>),</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>        <span class="at">plot.subtitle =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">12</span>),</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>        <span class="at">plot.caption =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">9</span>),</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>        <span class="at">legend.position =</span> <span class="st">"right"</span>,</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>        <span class="at">plot.margin =</span> <span class="fu">margin</span>(<span class="dv">15</span>, <span class="dv">15</span>, <span class="dv">15</span>, <span class="dv">15</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div id="fig-income-map" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig">
+<div aria-describedby="fig-income-map-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="assign03_files/figure-html/fig-income-map-1.png" class="img-fluid" style="width:100.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-income-map-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Median household income across Texas counties (2024 inflation-adjusted dollars).
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>County median household income ranges from $36,165 in Swisher County to $127,981 in Rockwall County. The map shows higher estimated incomes in parts of the major metropolitan areas and lower estimates in several southern and rural counties. Colors represent point estimates, not statistical significance.</p>
+<h2 id="poverty-rate-rankings" class="anchored">3. Poverty Rate Rankings</h2>
+<div class="cell">
+<details class="code-fold">
+<summary>Show R code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>top10 <span class="ot">&lt;-</span> county_data <span class="sc">|&gt;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(poverty_pct), GEOID) <span class="sc">|&gt;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_head</span>(<span class="at">n =</span> <span class="dv">10</span>) <span class="sc">|&gt;</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">group =</span> <span class="st">"Highest"</span>, <span class="at">rank =</span> <span class="fu">row_number</span>())</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>bottom10 <span class="ot">&lt;-</span> county_data <span class="sc">|&gt;</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(poverty_pct, GEOID) <span class="sc">|&gt;</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_head</span>(<span class="at">n =</span> <span class="dv">10</span>) <span class="sc">|&gt;</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">group =</span> <span class="st">"Lowest"</span>, <span class="at">rank =</span> <span class="fu">row_number</span>())</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>ranking_table <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(top10, bottom10)</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>ranking_table <span class="sc">|&gt;</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">transmute</span>(</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">Group =</span> group,</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">Rank =</span> rank,</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">County =</span> <span class="fu">sub</span>(<span class="st">", Texas$"</span>, <span class="st">""</span>, NAME),</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">Poverty rate (%)</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">sprintf</span>(<span class="st">"%.2f"</span>, poverty_pct),</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">MOE (± pp)</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">sprintf</span>(<span class="st">"%.2f"</span>, poverty_moe),</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">90% CI (%)</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">sprintf</span>(<span class="st">"%.2f–%.2f"</span>, ci_lower, ci_upper)</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>  knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="at">align =</span> <span class="fu">c</span>(<span class="st">"l"</span>, <span class="st">"r"</span>, <span class="st">"l"</span>, <span class="st">"r"</span>, <span class="st">"r"</span>, <span class="st">"r"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div id="tbl-poverty-rankings" class="cell quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-poverty-rankings-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;1: Texas counties with the ten highest and ten lowest estimated poverty rates.
+</figcaption>
+<div aria-describedby="tbl-poverty-rankings-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output-display">
+<table class="cell caption-top">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 7%">
+<col style="width: 24%">
+<col style="width: 24%">
+<col style="width: 15%">
+<col style="width: 17%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Group</th>
+<th style="text-align: right;">Rank</th>
+<th style="text-align: left;">County</th>
+<th style="text-align: right;">Poverty rate (%)</th>
+<th style="text-align: right;">MOE (± pp)</th>
+<th style="text-align: right;">90% CI (%)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Highest</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">Dimmit County</td>
+<td style="text-align: right;">41.11</td>
+<td style="text-align: right;">8.88</td>
+<td style="text-align: right;">32.23–49.98</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Highest</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">Zapata County</td>
+<td style="text-align: right;">38.39</td>
+<td style="text-align: right;">6.04</td>
+<td style="text-align: right;">32.35–44.44</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Highest</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: left;">Zavala County</td>
+<td style="text-align: right;">33.92</td>
+<td style="text-align: right;">9.53</td>
+<td style="text-align: right;">24.39–43.45</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Highest</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: left;">Starr County</td>
+<td style="text-align: right;">33.52</td>
+<td style="text-align: right;">3.23</td>
+<td style="text-align: right;">30.29–36.75</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Highest</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: left;">Duval County</td>
+<td style="text-align: right;">33.27</td>
+<td style="text-align: right;">8.40</td>
+<td style="text-align: right;">24.88–41.67</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Highest</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: left;">Presidio County</td>
+<td style="text-align: right;">32.00</td>
+<td style="text-align: right;">12.78</td>
+<td style="text-align: right;">19.22–44.78</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Highest</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: left;">Edwards County</td>
+<td style="text-align: right;">31.87</td>
+<td style="text-align: right;">23.24</td>
+<td style="text-align: right;">8.62–55.11</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Highest</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: left;">Jim Hogg County</td>
+<td style="text-align: right;">31.43</td>
+<td style="text-align: right;">11.15</td>
+<td style="text-align: right;">20.28–42.57</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Highest</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: left;">Swisher County</td>
+<td style="text-align: right;">30.10</td>
+<td style="text-align: right;">6.90</td>
+<td style="text-align: right;">23.20–37.00</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Highest</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">Kleberg County</td>
+<td style="text-align: right;">28.09</td>
+<td style="text-align: right;">4.33</td>
+<td style="text-align: right;">23.76–32.43</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Lowest</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">Rockwall County</td>
+<td style="text-align: right;">4.04</td>
+<td style="text-align: right;">0.69</td>
+<td style="text-align: right;">3.35–4.73</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Lowest</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">Sterling County</td>
+<td style="text-align: right;">4.32</td>
+<td style="text-align: right;">2.88</td>
+<td style="text-align: right;">1.44–7.21</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Lowest</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: left;">Sutton County</td>
+<td style="text-align: right;">4.51</td>
+<td style="text-align: right;">2.85</td>
+<td style="text-align: right;">1.66–7.36</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Lowest</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: left;">Kendall County</td>
+<td style="text-align: right;">5.03</td>
+<td style="text-align: right;">1.43</td>
+<td style="text-align: right;">3.60–6.46</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Lowest</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: left;">Armstrong County</td>
+<td style="text-align: right;">5.19</td>
+<td style="text-align: right;">2.80</td>
+<td style="text-align: right;">2.40–7.99</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Lowest</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: left;">Foard County</td>
+<td style="text-align: right;">5.57</td>
+<td style="text-align: right;">4.39</td>
+<td style="text-align: right;">1.19–9.96</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Lowest</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: left;">Roberts County</td>
+<td style="text-align: right;">5.65</td>
+<td style="text-align: right;">3.87</td>
+<td style="text-align: right;">1.78–9.52</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Lowest</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: left;">Loving County</td>
+<td style="text-align: right;">6.06</td>
+<td style="text-align: right;">2.52</td>
+<td style="text-align: right;">3.54–8.59</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Lowest</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: left;">Hemphill County</td>
+<td style="text-align: right;">6.19</td>
+<td style="text-align: right;">3.24</td>
+<td style="text-align: right;">2.95–9.43</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Lowest</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">Collin County</td>
+<td style="text-align: right;">6.23</td>
+<td style="text-align: right;">0.35</td>
+<td style="text-align: right;">5.88–6.59</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<p>MOE is expressed in percentage points (pp). Rankings use unrounded point estimates. Confidence intervals are bounded by 0% and 100%.</p>
+<h2 id="uncertainty-check" class="anchored">4. Uncertainty Check</h2>
+<p>Dimmit County has the highest estimated poverty rate (41.11%, MOE ±8.88 pp), followed by Zapata County (38.39%, MOE ±6.04 pp). Their 90% confidence intervals are 32.23–49.98% and 32.35–44.44%, respectively, and overlap substantially. In fact, all 18 adjacent pairs within the highest and lowest groups have overlapping intervals. The precise ranking is therefore uncertain; interval overlap alone does not establish whether a difference is statistically significant.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show R code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>adjacent_pairs <span class="ot">&lt;-</span> ranking_table <span class="sc">|&gt;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(group) <span class="sc">|&gt;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(rank, <span class="at">.by_group =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">next_county =</span> <span class="fu">lead</span>(NAME),</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">overlap =</span> ci_lower <span class="sc">&lt;=</span> <span class="fu">lead</span>(ci_upper) <span class="sc">&amp;</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>                   ci_upper <span class="sc">&gt;=</span> <span class="fu">lead</span>(ci_lower)) <span class="sc">|&gt;</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">|&gt;</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(next_county))</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">nrow</span>(adjacent_pairs) <span class="sc">==</span> <span class="dv">18</span>, <span class="fu">all</span>(adjacent_pairs<span class="sc">$</span>overlap))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<h2 id="methods-note" class="anchored">5. Methods Note</h2>
+<p>The analysis uses 2020–2024 ACS 5-year estimates for all 254 Texas counties. Counties provide a consistent geographic unit for comparing socioeconomic conditions while keeping the statewide map readable. Median household income measures household economic resources in 2024 inflation-adjusted dollars. Poverty is measured as the number of people below the poverty threshold divided by the population for whom poverty status is determined, rather than as a raw count. Data and county boundaries were obtained through <code>tidycensus</code>, retaining the original estimates and their margins of error. The poverty-rate MOEs were propagated using <code>moe_prop()</code> and converted into percentage points. Approximate 90% confidence intervals were constructed by adding and subtracting the corresponding MOE. The ranking is based on point estimates, not statistical tests. Overlapping intervals and large MOEs, particularly in counties such as Edwards, limit confidence in precise rankings. The income map likewise displays estimated values rather than significant differences. Raw data were cached locally to preserve the downloaded estimates and support reproducible analysis.</p>
 </section>
 
 

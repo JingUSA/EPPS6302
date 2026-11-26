@@ -1,10 +1,175 @@
 ---
 title: "Assignment 3: ACS via tidycensus"
+execute:
+  echo: true
+  warning: false
+  message: false
+code-fold: true
+code-summary: "Show R code"
 ---
 
 ::: {.assignment-report}
 # Assignment 3: ACS via tidycensus
 
-This assignment has not yet been completed.
+**Income and Poverty across Texas Counties**  
+EPPS 6302 — Methods of Data Collection and Production | Fall 2026
+
+## 1. Data and Variables
+
+Source: U.S. Census Bureau, 2024 ACS 5-year estimates (2020–2024), retrieved November 26, 2026, at 17:06:33 CST. The dataset contains 254 Texas counties, with one observation per county and no missing estimates or margins of error (MOEs).
+
+| Variable | ACS code |
+|:---|:---|
+| Median household income (2024 dollars) | `B19013_001` |
+| Population below poverty level | `B17001_002` |
+| Population for whom poverty status is determined | `B17001_001` |
+
+```{r}
+#| label: collect-acs
+#| eval: false
+library(tidycensus)
+library(tigris)
+library(sf)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(readr)
+options(tigris_use_cache = TRUE)
+
+my_vars <- c(income = "B19013_001", pov = "B17001_002",
+             povden = "B17001_001")
+vars <- load_variables(2024, "acs5")
+vars |> filter(name %in% unname(my_vars))
+
+# The API key is configured locally in .Renviron.
+# This acquisition block is not executed when rendering.
+data_dir <- "data/assignment03"
+dir.create(data_dir, recursive = TRUE, showWarnings = FALSE)
+raw_file <- file.path(data_dir, "acs_TX_2024_raw.rds")
+if (!file.exists(raw_file)) {
+  retrieval_time <- Sys.time()
+  acs_raw <- get_acs(
+    geography = "county", state = "TX", variables = my_vars,
+    year = 2024, survey = "acs5", geometry = TRUE,
+    output = "wide", moe_level = 90,
+    key = Sys.getenv("CENSUS_API_KEY")
+  )
+  saveRDS(acs_raw, raw_file)
+  writeLines(format(retrieval_time, tz = "America/Chicago", usetz = TRUE),
+             file.path(data_dir, "retrieval_time.txt"))
+}
+```
+
+```{r}
+#| label: prepare-cached-data
+library(tidycensus)
+library(sf)
+library(dplyr)
+library(ggplot2)
+library(readr)
+
+# Render from the archived download, without calling the API.
+data_dir <- "data/assignment03"
+acs_raw <- readRDS(file.path(data_dir, "acs_TX_2024_raw.rds"))
+stopifnot(inherits(acs_raw, "sf"), nrow(acs_raw) == 254,
+          anyDuplicated(acs_raw$GEOID) == 0,
+          all(acs_raw$povdenE > 0))
+
+acs_wide <- acs_raw |>
+  mutate(
+    pov_rate = povE / povdenE,
+    pov_moe = moe_prop(povE, povdenE, povM, povdenM),
+    poverty_pct = 100 * pov_rate,
+    poverty_moe = 100 * pov_moe,
+    ci_lower = pmax(0, poverty_pct - poverty_moe),
+    ci_upper = pmin(100, poverty_pct + poverty_moe)
+  )
+county_data <- as_tibble(st_drop_geometry(acs_wide))
+stopifnot(all(is.finite(county_data$poverty_pct)),
+          all(is.finite(county_data$poverty_moe)))
+# A tidy CSV with one row per county is already archived.
+# write_csv(county_data, file.path(data_dir, "acs_TX_2024.csv"))
+```
+
+## 2. Choropleth Map: Median Household Income
+
+```{r}
+#| label: fig-income-map
+#| fig-cap: "Median household income across Texas counties (2024 inflation-adjusted dollars)."
+#| fig-width: 10
+#| fig-height: 8
+#| dpi: 150
+#| out-width: "100%"
+
+ggplot(acs_wide) +
+  geom_sf(aes(fill = incomeE), color = "white", linewidth = 0.08) +
+  scale_fill_viridis_c(
+    labels = scales::label_dollar(),
+    name = "Median household\nincome (USD)"
+  ) +
+  labs(title = "Median Household Income across Texas Counties",
+       subtitle = "2020–2024 American Community Survey",
+       caption = "Source: U.S. Census Bureau, ACS 2024 5-year estimates.") +
+  theme_void() +
+  theme(plot.title = element_text(size = 16, face = "bold"),
+        plot.subtitle = element_text(size = 12),
+        plot.caption = element_text(size = 9),
+        legend.position = "right",
+        plot.margin = margin(15, 15, 15, 15))
+```
+
+County median household income ranges from $36,165 in Swisher County to $127,981 in Rockwall County. The map shows higher estimated incomes in parts of the major metropolitan areas and lower estimates in several southern and rural counties. Colors represent point estimates, not statistical significance.
+
+## 3. Poverty Rate Rankings
+
+```{r}
+#| label: tbl-poverty-rankings
+#| tbl-cap: "Texas counties with the ten highest and ten lowest estimated poverty rates."
+
+top10 <- county_data |>
+  arrange(desc(poverty_pct), GEOID) |>
+  slice_head(n = 10) |>
+  mutate(group = "Highest", rank = row_number())
+bottom10 <- county_data |>
+  arrange(poverty_pct, GEOID) |>
+  slice_head(n = 10) |>
+  mutate(group = "Lowest", rank = row_number())
+ranking_table <- bind_rows(top10, bottom10)
+
+ranking_table |>
+  transmute(
+    Group = group,
+    Rank = rank,
+    County = sub(", Texas$", "", NAME),
+    `Poverty rate (%)` = sprintf("%.2f", poverty_pct),
+    `MOE (± pp)` = sprintf("%.2f", poverty_moe),
+    `90% CI (%)` = sprintf("%.2f–%.2f", ci_lower, ci_upper)
+  ) |>
+  knitr::kable(align = c("l", "r", "l", "r", "r", "r"))
+```
+
+MOE is expressed in percentage points (pp). Rankings use unrounded point estimates. Confidence intervals are bounded by 0% and 100%.
+
+## 4. Uncertainty Check
+
+Dimmit County has the highest estimated poverty rate (41.11%, MOE ±8.88 pp), followed by Zapata County (38.39%, MOE ±6.04 pp). Their 90% confidence intervals are 32.23–49.98% and 32.35–44.44%, respectively, and overlap substantially. In fact, all 18 adjacent pairs within the highest and lowest groups have overlapping intervals. The precise ranking is therefore uncertain; interval overlap alone does not establish whether a difference is statistically significant.
+
+```{r}
+#| label: check-interval-overlap
+#| results: hide
+adjacent_pairs <- ranking_table |>
+  group_by(group) |>
+  arrange(rank, .by_group = TRUE) |>
+  mutate(next_county = lead(NAME),
+         overlap = ci_lower <= lead(ci_upper) &
+                   ci_upper >= lead(ci_lower)) |>
+  ungroup() |>
+  filter(!is.na(next_county))
+stopifnot(nrow(adjacent_pairs) == 18, all(adjacent_pairs$overlap))
+```
+
+## 5. Methods Note
+
+The analysis uses 2020–2024 ACS 5-year estimates for all 254 Texas counties. Counties provide a consistent geographic unit for comparing socioeconomic conditions while keeping the statewide map readable. Median household income measures household economic resources in 2024 inflation-adjusted dollars. Poverty is measured as the number of people below the poverty threshold divided by the population for whom poverty status is determined, rather than as a raw count. Data and county boundaries were obtained through `tidycensus`, retaining the original estimates and their margins of error. The poverty-rate MOEs were propagated using `moe_prop()` and converted into percentage points. Approximate 90% confidence intervals were constructed by adding and subtracting the corresponding MOE. The ranking is based on point estimates, not statistical tests. Overlapping intervals and large MOEs, particularly in counties such as Edwards, limit confidence in precise rankings. The income map likewise displays estimated values rather than significant differences. Raw data were cached locally to preserve the downloaded estimates and support reproducible analysis.
 
 :::
