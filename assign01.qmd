@@ -17,6 +17,6 @@ The website uses a minimalist design with custom CSS, a white background, dark t
 
 The navigation bar includes five sections: Home, CV, Research, Teaching, and Assignments. The CV section provides access to my updated curriculum vitae in PDF format. The Research and Teaching sections present my academic work and teaching experience. The Assignments dropdown menu provides direct access to all eight course assignments.
 
-Each assignment is organized in a separate Quarto document, allowing code, data analysis, tables, figures, and written interpretations to be presented together. The website is prepared for publication through GitHub Pages, providing an accessible platform for presenting coursework and documenting reproducible research.
+Each assignment is organized in a separate Quarto document, allowing code, data analysis, tables, figures, and written interpretations to be presented together. The website is published through GitHub Pages, providing an accessible platform for presenting coursework and documenting reproducible research.
 
 :::
