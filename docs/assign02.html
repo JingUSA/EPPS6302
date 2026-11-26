@@ -24,6 +24,41 @@ ul.task-list li input[type="checkbox"] {
   vertical-align: middle;
 }
 .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -140,7 +175,478 @@ document.addEventListener('DOMContentLoaded', function () {
 
 <section id="assignment-2-google-trends" class="assignment-report">
 <h1>Assignment 2: Google Trends</h1>
-<p>This assignment has not yet been completed.</p>
+<p><strong>Two Ways to Get the Same Data</strong><br>
+EPPS 6302 — Methods of Data Collection and Production | Fall 2026</p>
+<h2 id="a.1.-data-collection-and-query-parameters" class="anchored">A.1. Data Collection and Query Parameters</h2>
+<p>The analysis compares Google Trends website exports with data collected using <code>gtrendsR</code> (version 1.5.2). The historical cutoff is September 8, 2026, the assignment date; the data were retrieved on November 26, 2026.</p>
+<table class="caption-top">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Parameter</th>
+<th style="text-align: left;">Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Search terms</td>
+<td style="text-align: left;">Trump, Kamala Harris, Election</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Geography</td>
+<td style="text-align: left;">United States (US)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Query window</td>
+<td style="text-align: left;">September 8, 2021–September 8, 2026</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Category / search type</td>
+<td style="text-align: left;">All categories (0) / Web Search</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Query type</td>
+<td style="text-align: left;">Search terms, not topics</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Website retrieval</td>
+<td style="text-align: left;">November 26, 2026; exact time not recorded</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Initial R retrieval</td>
+<td style="text-align: left;">November 26, 2026, 15:04:05 CST</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Unit</td>
+<td style="text-align: left;">Normalized search interest (0–100)</td>
+</tr>
+</tbody>
+</table>
+<p>All four website queries used the same geography, category, and search type. The shorter query covers June 10–September 8, 2026; the two-term query removes Election; and the independent news query uses <em>foldable iPhone</em>. The latter was selected because the anticipated product announcement received <a href="https://www.investing.com/news/stock-market-news/apples-ternus-faces-ai-test-as-foldable-iphone-takes-center-stage-4891208">Reuters coverage on September 8, 2026</a>. Its peak is 100 in the week labeled September 6, 2026.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show R code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyr)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>data_dir <span class="ot">&lt;-</span> <span class="st">"data/assignment02_sep08"</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Keep the original &lt;1 marker; use 0.5 only for numerical summaries.</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>score <span class="ot">&lt;-</span> <span class="cf">function</span>(x) <span class="fu">as.numeric</span>(<span class="fu">ifelse</span>(x <span class="sc">==</span> <span class="st">"&lt;1"</span>, <span class="st">"0.5"</span>, x))</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>read_web <span class="ot">&lt;-</span> <span class="cf">function</span>(file) {</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  x <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="fu">file.path</span>(data_dir, file), <span class="at">skip =</span> <span class="dv">2</span>,</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>                <span class="at">col_types =</span> <span class="fu">cols</span>(<span class="at">.default =</span> <span class="fu">col_character</span>()))</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">names</span>(x)[<span class="dv">1</span>] <span class="ot">&lt;-</span> <span class="st">"date"</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">names</span>(x) <span class="ot">&lt;-</span> <span class="fu">sub</span>(<span class="st">": </span><span class="sc">\\</span><span class="st">(United States</span><span class="sc">\\</span><span class="st">)$"</span>, <span class="st">""</span>, <span class="fu">names</span>(x))</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>  x <span class="sc">|&gt;</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pivot_longer</span>(<span class="sc">-</span>date, <span class="at">names_to =</span> <span class="st">"keyword"</span>, <span class="at">values_to =</span> <span class="st">"hits"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">date =</span> <span class="fu">as.Date</span>(date), <span class="at">value =</span> <span class="fu">score</span>(hits))</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>read_r <span class="ot">&lt;-</span> <span class="cf">function</span>(file) {</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">read_csv</span>(<span class="fu">file.path</span>(data_dir, file),</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>           <span class="at">col_types =</span> <span class="fu">cols</span>(<span class="at">.default =</span> <span class="fu">col_character</span>())) <span class="sc">|&gt;</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">date =</span> <span class="fu">as.Date</span>(<span class="fu">substr</span>(date, <span class="dv">1</span>, <span class="dv">10</span>)), <span class="at">value =</span> <span class="fu">score</span>(hits))</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>web <span class="ot">&lt;-</span> <span class="fu">read_web</span>(<span class="st">"web_5years.csv"</span>)</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>short <span class="ot">&lt;-</span> <span class="fu">read_web</span>(<span class="st">"web_90days.csv"</span>)</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>two <span class="ot">&lt;-</span> <span class="fu">read_web</span>(<span class="st">"web_2terms.csv"</span>)</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>news <span class="ot">&lt;-</span> <span class="fu">read_web</span>(<span class="st">"web_custom.csv"</span>)</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>r <span class="ot">&lt;-</span> <span class="fu">read_r</span>(<span class="st">"r_5years.csv"</span>)</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>harris <span class="ot">&lt;-</span> <span class="fu">read_r</span>(<span class="st">"r_harris.csv"</span>)</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a><span class="co"># Verify the number of observations and uniqueness of comparison keys.</span></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">nrow</span>(web) <span class="sc">==</span> <span class="dv">786</span>L, <span class="fu">nrow</span>(r) <span class="sc">==</span> <span class="dv">786</span>L,</span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>          <span class="fu">n_distinct</span>(short<span class="sc">$</span>date) <span class="sc">==</span> <span class="dv">91</span>L,</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>          <span class="sc">!</span><span class="fu">anyDuplicated</span>(web[<span class="fu">c</span>(<span class="st">"date"</span>, <span class="st">"keyword"</span>)]),</span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>          <span class="sc">!</span><span class="fu">anyDuplicated</span>(r[<span class="fu">c</span>(<span class="st">"date"</span>, <span class="st">"keyword"</span>)]))</span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>align <span class="ot">&lt;-</span> <span class="cf">function</span>(a, b) {</span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>  <span class="fu">inner_join</span>(<span class="fu">select</span>(a, date, keyword, hits, value),</span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>             <span class="fu">select</span>(b, date, keyword, hits, value),</span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>             <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"date"</span>, <span class="st">"keyword"</span>), <span class="at">suffix =</span> <span class="fu">c</span>(<span class="st">"_a"</span>, <span class="st">"_b"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">difference =</span> value_b <span class="sc">-</span> value_a,</span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>           <span class="at">changed =</span> hits_a <span class="sc">!=</span> hits_b)</span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<h2 id="a.2.-exploring-the-website-data" class="anchored">A.2. Exploring the Website Data</h2>
+<p>The five-year export contains 262 weekly observations per term (September 5, 2021–September 6, 2026). The shorter query contains 91 daily dates. The weekly labels identify the start of each week, not the exact query boundaries. A score of 100 indicates peak relative search interest within a query; 0 indicates insufficient relative search interest to report a nonzero score, not necessarily zero searches. Google normalizes sampled searches by total searches and rescales the resulting shares (<a href="https://support.google.com/trends/answer/4365533">Google Trends documentation</a>). Values reported as <code>&lt;1</code> are coded as 0.5 for numerical summaries only.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show R code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>normalization <span class="ot">&lt;-</span> <span class="fu">align</span>(web, two) <span class="sc">|&gt;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(keyword) <span class="sc">|&gt;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">Weeks =</span> <span class="fu">n</span>(),</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>            <span class="st">`</span><span class="at">Peak: three terms</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">max</span>(value_a),</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>            <span class="st">`</span><span class="at">Peak: two terms</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">max</span>(value_b),</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>            <span class="st">`</span><span class="at">Weeks changed</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">sum</span>(changed),</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>            <span class="st">`</span><span class="at">Mean change</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">mean</span>(difference), <span class="at">.groups =</span> <span class="st">"drop"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">Term =</span> keyword)</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(normalization, <span class="at">digits =</span> <span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top">
+<colgroup>
+<col style="width: 17%">
+<col style="width: 7%">
+<col style="width: 22%">
+<col style="width: 20%">
+<col style="width: 17%">
+<col style="width: 15%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Term</th>
+<th style="text-align: right;">Weeks</th>
+<th style="text-align: right;">Peak: three terms</th>
+<th style="text-align: right;">Peak: two terms</th>
+<th style="text-align: right;">Weeks changed</th>
+<th style="text-align: right;">Mean change</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Kamala Harris</td>
+<td style="text-align: right;">262</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">24</td>
+<td style="text-align: right;">32</td>
+<td style="text-align: right;">0.395</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Trump</td>
+<td style="text-align: right;">262</td>
+<td style="text-align: right;">27</td>
+<td style="text-align: right;">100</td>
+<td style="text-align: right;">262</td>
+<td style="text-align: right;">8.198</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Removing Election raises the remaining scores because the query is rescaled. These increases do not imply an increase in search volume. The three-term series peaks during the week of November 3, 2024, when Election reaches 100.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show R code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(web, <span class="fu">aes</span>(date, value, <span class="at">colour =</span> keyword)) <span class="sc">+</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">linewidth =</span> <span class="fl">0.65</span>) <span class="sc">+</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_colour_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"Election"</span> <span class="ot">=</span> <span class="st">"#B7791F"</span>,</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>                                 <span class="st">"Kamala Harris"</span> <span class="ot">=</span> <span class="st">"#B54747"</span>,</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>                                 <span class="st">"Trump"</span> <span class="ot">=</span> <span class="st">"#2463A3"</span>)) <span class="sc">+</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">limits =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">100</span>), <span class="at">breaks =</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">100</span>, <span class="dv">25</span>)) <span class="sc">+</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="st">"Search interest (0–100)"</span>, <span class="at">colour =</span> <span class="cn">NULL</span>) <span class="sc">+</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">12</span>) <span class="sc">+</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"bottom"</span>, <span class="at">panel.grid.minor =</span> <span class="fu">element_blank</span>())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div id="fig-us-trends" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig">
+<div aria-describedby="fig-us-trends-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="assign02_files/figure-html/fig-us-trends-1.png" class="img-fluid" style="width:100.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-us-trends-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Weekly U.S. search interest. Website and R scores coincide for all 786 matched observations.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<h2 id="a.3.-r-collection-and-measurement-validity" class="anchored">A.3. R Collection and Measurement Validity</h2>
+<p>The original script uses Harris rather than Kamala Harris. Holding the other two terms and query settings constant, the series differ in all 262 weeks. Harris has a peak of 11 versus 7 for Kamala Harris, a mean difference of +0.597 index points, and a Pearson correlation of 0.972. A surname is an imperfect proxy for a specific political figure because it can also refer to other people, places, and organizations; the index differences do not identify the share of unrelated searches.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show R code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>h <span class="ot">&lt;-</span> <span class="fu">align</span>(<span class="fu">filter</span>(r, keyword <span class="sc">==</span> <span class="st">"Kamala Harris"</span>),</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>           <span class="fu">filter</span>(harris, keyword <span class="sc">==</span> <span class="st">"Harris"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>             <span class="fu">mutate</span>(<span class="at">keyword =</span> <span class="st">"Kamala Harris"</span>))</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">nrow</span>(h) <span class="sc">==</span> <span class="dv">262</span>L)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">data.frame</span>(</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">Weeks =</span> <span class="fu">nrow</span>(h), <span class="at">Changed =</span> <span class="fu">sum</span>(h<span class="sc">$</span>changed),</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">Mean difference</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">mean</span>(h<span class="sc">$</span>difference),</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">Correlation =</span> <span class="fu">cor</span>(h<span class="sc">$</span>value_a, h<span class="sc">$</span>value_b), <span class="at">check.names =</span> <span class="cn">FALSE</span>), <span class="at">digits =</span> <span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top">
+<thead>
+<tr class="header">
+<th style="text-align: right;">Weeks</th>
+<th style="text-align: right;">Changed</th>
+<th style="text-align: right;">Mean difference</th>
+<th style="text-align: right;">Correlation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">262</td>
+<td style="text-align: right;">262</td>
+<td style="text-align: right;">0.597</td>
+<td style="text-align: right;">0.972</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>The historical R queries cover January 1, 2004–September 8, 2026 (273 monthly dates), using a fixed endpoint instead of the script’s rolling <code>time = "all"</code>. Tariff peaks in April 2025 in the standalone worldwide and UK queries and the joint US/GB/TW query. In the joint worldwide query of tariff, China military, and Taiwan, Taiwan reaches 100 in August 2022. Scores from separate queries have different normalization bases.</p>
+<p>The full R object also contains geographic interest and related queries, beyond the website’s downloaded time-series CSV. <code>interest_by_region</code> and <code>related_topics</code> were returned as empty components in this particular pull. These types of information may be available through other website panels.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show R code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Read the original object, without contacting Google Trends.</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>tct <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="fu">file.path</span>(data_dir, <span class="st">"r_world_3terms.rds"</span>))</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">data.frame</span>(<span class="at">Component =</span> <span class="fu">names</span>(tct),</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>                        <span class="at">Rows =</span> <span class="fu">as.integer</span>(<span class="fu">sapply</span>(tct, NROW))))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Component</th>
+<th style="text-align: right;">Rows</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">interest_over_time</td>
+<td style="text-align: right;">819</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">interest_by_country</td>
+<td style="text-align: right;">750</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">interest_by_region</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">interest_by_dma</td>
+<td style="text-align: right;">918</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">interest_by_city</td>
+<td style="text-align: right;">600</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">related_topics</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">related_queries</td>
+<td style="text-align: right;">130</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<h2 id="a.4.-comparing-the-two-methods" class="anchored">A.4. Comparing the Two Methods</h2>
+<p>The website and R series match on all 786 date–term pairs, with no difference in either direction. The repeated R queries also yield identical values. The final repeat began 2 minutes and 28 seconds after the first query. This demonstrates short-term stability in these pulls, not guaranteed reproducibility: the underlying sampled searches, normalization, and service-side caching may change.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show R code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>compare <span class="ot">&lt;-</span> <span class="cf">function</span>(a, b, label) {</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  x <span class="ot">&lt;-</span> <span class="fu">align</span>(a, b)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stopifnot</span>(<span class="fu">nrow</span>(x) <span class="sc">==</span> <span class="fu">nrow</span>(a), <span class="fu">nrow</span>(x) <span class="sc">==</span> <span class="fu">nrow</span>(b))</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>(<span class="at">Comparison =</span> label, <span class="at">Matched =</span> <span class="fu">nrow</span>(x),</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>             <span class="at">Identical =</span> <span class="fu">sum</span>(<span class="sc">!</span>x<span class="sc">$</span>changed),</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Mean difference</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">mean</span>(x<span class="sc">$</span>difference),</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>             <span class="at">MAE =</span> <span class="fu">mean</span>(<span class="fu">abs</span>(x<span class="sc">$</span>difference)),</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>             <span class="st">`</span><span class="at">Max absolute difference</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">max</span>(<span class="fu">abs</span>(x<span class="sc">$</span>difference)),</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>             <span class="at">check.names =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>comparison <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">compare</span>(web, r, <span class="st">"Website vs. R"</span>),</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">compare</span>(r, <span class="fu">read_r</span>(<span class="st">"r_5years_repeat.csv"</span>), <span class="st">"Repeat 1 (18 s)"</span>),</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">compare</span>(r, <span class="fu">read_r</span>(<span class="st">"r_5years_repeat_later.csv"</span>), <span class="st">"Repeat 2 (79 s)"</span>),</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">compare</span>(r, <span class="fu">read_r</span>(<span class="st">"r_5years_repeat_final.csv"</span>), <span class="st">"Repeat 3 (148 s)"</span>)</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(comparison, <span class="at">digits =</span> <span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top">
+<colgroup>
+<col style="width: 21%">
+<col style="width: 10%">
+<col style="width: 12%">
+<col style="width: 20%">
+<col style="width: 5%">
+<col style="width: 30%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Comparison</th>
+<th style="text-align: right;">Matched</th>
+<th style="text-align: right;">Identical</th>
+<th style="text-align: right;">Mean difference</th>
+<th style="text-align: right;">MAE</th>
+<th style="text-align: right;">Max absolute difference</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Website vs.&nbsp;R</td>
+<td style="text-align: right;">786</td>
+<td style="text-align: right;">786</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Repeat 1 (18 s)</td>
+<td style="text-align: right;">786</td>
+<td style="text-align: right;">786</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Repeat 2 (79 s)</td>
+<td style="text-align: right;">786</td>
+<td style="text-align: right;">786</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Repeat 3 (148 s)</td>
+<td style="text-align: right;">786</td>
+<td style="text-align: right;">786</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<table class="caption-top">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Dimension</th>
+<th style="text-align: left;">Website</th>
+<th style="text-align: left;">R (<code>gtrendsR</code>)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Reproducibility</td>
+<td style="text-align: left;">Manual downloads must be archived.</td>
+<td style="text-align: left;">Scripts reproduce query settings, not necessarily identical samples; cache the raw pulls.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Provenance</td>
+<td style="text-align: left;">CSV records terms, geography and category, but not all settings or retrieval time.</td>
+<td style="text-align: left;">Returned columns record query parameters; the script separately logs the actual retrieval time.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Scale</td>
+<td style="text-align: left;">Manual repetition is slow.</td>
+<td style="text-align: left;">Batch collection is easier, but queries with many terms require overlapping batches and a common anchor for comparable scores.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Fragility</td>
+<td style="text-align: left;">Download errors, changed UI, or incorrect filters may go unnoticed.</td>
+<td style="text-align: left;">Unofficial endpoint changes, rate limits, or incomplete results can break queries; check errors, dates, keys, and row counts.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Conclusion.</strong> Google Trends is useful for measuring relative search attention, but results depend on the search terms, query window, geography, normalization, and sampling. Archived raw data and recorded parameters are essential for reproducible research.</p>
+<details>
+<summary>
+<strong>Supplementary R code and historical plots</strong>
+</summary>
+<p>The following collection code reproduces the query design. The actual data are cached as CSV and RDS files. It is displayed as reference code only; rendering this report does not rerun the Google Trends requests. The three repeat calls were executed separately at the recorded times.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(gtrendsR)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>data_dir <span class="ot">&lt;-</span> <span class="st">"data/assignment02_sep08"</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="fu">dir.create</span>(data_dir, <span class="at">recursive =</span> <span class="cn">TRUE</span>, <span class="at">showWarnings =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>time_5years <span class="ot">&lt;-</span> <span class="st">"2021-09-08 2026-09-08"</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>time_all <span class="ot">&lt;-</span> <span class="st">"2004-01-01 2026-09-08"</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>collect_trends <span class="ot">&lt;-</span> <span class="cf">function</span>(filename, ...) {</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  path <span class="ot">&lt;-</span> <span class="fu">file.path</span>(data_dir, filename)</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">file.exists</span>(<span class="fu">paste0</span>(path, <span class="st">".rds"</span>))) {</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">readRDS</span>(<span class="fu">paste0</span>(path, <span class="st">".rds"</span>)))</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>  pulled_at <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>()</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>  result <span class="ot">&lt;-</span> <span class="fu">gtrends</span>(...)</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">saveRDS</span>(result, <span class="fu">paste0</span>(path, <span class="st">".rds"</span>))</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">write_csv</span>(result<span class="sc">$</span>interest_over_time, <span class="fu">paste0</span>(path, <span class="st">".csv"</span>))</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">writeLines</span>(<span class="fu">format</span>(pulled_at, <span class="at">tz =</span> <span class="st">"America/Chicago"</span>, <span class="at">usetz =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>             <span class="fu">paste0</span>(path, <span class="st">"_retrieval.txt"</span>))</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>  result</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>us_query <span class="ot">&lt;-</span> <span class="cf">function</span>(filename, terms) {</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect_trends</span>(filename, <span class="at">keyword =</span> terms, <span class="at">geo =</span> <span class="st">"US"</span>,</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>                 <span class="at">time =</span> time_5years, <span class="at">gprop =</span> <span class="st">"web"</span>, <span class="at">category =</span> <span class="dv">0</span>,</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>                 <span class="at">onlyInterest =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>terms <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"Trump"</span>, <span class="st">"Kamala Harris"</span>, <span class="st">"Election"</span>)</span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>trends_us <span class="ot">&lt;-</span> <span class="fu">us_query</span>(<span class="st">"r_5years"</span>, terms)</span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>trends_harris <span class="ot">&lt;-</span> <span class="fu">us_query</span>(<span class="st">"r_harris"</span>, <span class="fu">c</span>(<span class="st">"Trump"</span>, <span class="st">"Harris"</span>, <span class="st">"Election"</span>))</span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a>tg <span class="ot">&lt;-</span> <span class="fu">collect_trends</span>(<span class="st">"r_tariff_world"</span>, <span class="at">keyword =</span> <span class="st">"tariff"</span>, <span class="at">geo =</span> <span class="st">""</span>,</span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a>                    <span class="at">time =</span> time_all, <span class="at">gprop =</span> <span class="st">"web"</span>, <span class="at">category =</span> <span class="dv">0</span>,</span>
+<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a>                    <span class="at">onlyInterest =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a>tg_gb <span class="ot">&lt;-</span> <span class="fu">collect_trends</span>(<span class="st">"r_tariff_gb"</span>, <span class="at">keyword =</span> <span class="st">"tariff"</span>, <span class="at">geo =</span> <span class="st">"GB"</span>,</span>
+<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a>                       <span class="at">time =</span> time_all, <span class="at">gprop =</span> <span class="st">"web"</span>, <span class="at">category =</span> <span class="dv">0</span>,</span>
+<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a>                       <span class="at">onlyInterest =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a>tg_countries <span class="ot">&lt;-</span> <span class="fu">collect_trends</span>(<span class="st">"r_tariff_countries"</span>, <span class="at">keyword =</span> <span class="st">"tariff"</span>,</span>
+<span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a>                              <span class="at">geo =</span> <span class="fu">c</span>(<span class="st">"US"</span>, <span class="st">"GB"</span>, <span class="st">"TW"</span>), <span class="at">time =</span> time_all,</span>
+<span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a>                              <span class="at">gprop =</span> <span class="st">"web"</span>, <span class="at">category =</span> <span class="dv">0</span>, <span class="at">onlyInterest =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a>tct <span class="ot">&lt;-</span> <span class="fu">collect_trends</span>(<span class="st">"r_world_3terms"</span>,</span>
+<span id="cb7-42"><a href="#cb7-42" aria-hidden="true" tabindex="-1"></a>                      <span class="at">keyword =</span> <span class="fu">c</span>(<span class="st">"tariff"</span>, <span class="st">"China military"</span>, <span class="st">"Taiwan"</span>),</span>
+<span id="cb7-43"><a href="#cb7-43" aria-hidden="true" tabindex="-1"></a>                      <span class="at">geo =</span> <span class="st">""</span>, <span class="at">time =</span> time_all, <span class="at">gprop =</span> <span class="st">"web"</span>, <span class="at">category =</span> <span class="dv">0</span>,</span>
+<span id="cb7-44"><a href="#cb7-44" aria-hidden="true" tabindex="-1"></a>                      <span class="at">onlyInterest =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb7-45"><a href="#cb7-45" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(tct)</span>
+<span id="cb7-46"><a href="#cb7-46" aria-hidden="true" tabindex="-1"></a><span class="fu">sapply</span>(tct, NROW)</span>
+<span id="cb7-47"><a href="#cb7-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-48"><a href="#cb7-48" aria-hidden="true" tabindex="-1"></a><span class="co"># In the actual collection, these calls were run at separate times.</span></span>
+<span id="cb7-49"><a href="#cb7-49" aria-hidden="true" tabindex="-1"></a>trends_repeat <span class="ot">&lt;-</span> <span class="fu">us_query</span>(<span class="st">"r_5years_repeat"</span>, terms)</span>
+<span id="cb7-50"><a href="#cb7-50" aria-hidden="true" tabindex="-1"></a>trends_repeat_later <span class="ot">&lt;-</span> <span class="fu">us_query</span>(<span class="st">"r_5years_repeat_later"</span>, terms)</span>
+<span id="cb7-51"><a href="#cb7-51" aria-hidden="true" tabindex="-1"></a>trends_repeat_final <span class="ot">&lt;-</span> <span class="fu">us_query</span>(<span class="st">"r_5years_repeat_final"</span>, terms)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell">
+<details class="code-fold">
+<summary>Show R code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>historical <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">read_r</span>(<span class="st">"r_tariff_world.csv"</span>) <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">query =</span> <span class="st">"Tariff: worldwide"</span>, <span class="at">series =</span> <span class="st">"Worldwide"</span>),</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">read_r</span>(<span class="st">"r_tariff_gb.csv"</span>) <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">query =</span> <span class="st">"Tariff: UK"</span>, <span class="at">series =</span> <span class="st">"GB"</span>),</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">read_r</span>(<span class="st">"r_tariff_countries.csv"</span>) <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">query =</span> <span class="st">"Tariff: US, GB, TW"</span>, <span class="at">series =</span> geo),</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">read_r</span>(<span class="st">"r_world_3terms.csv"</span>) <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">query =</span> <span class="st">"Three terms: worldwide"</span>, <span class="at">series =</span> keyword)</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(historical, <span class="fu">aes</span>(date, value, <span class="at">colour =</span> series)) <span class="sc">+</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">linewidth =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> query, <span class="at">ncol =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">limits =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">100</span>)) <span class="sc">+</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="st">"Search interest (0–100)"</span>, <span class="at">colour =</span> <span class="cn">NULL</span>) <span class="sc">+</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">11</span>) <span class="sc">+</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"bottom"</span>, <span class="at">panel.grid.minor =</span> <span class="fu">element_blank</span>())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div id="fig-historical" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig">
+<div aria-describedby="fig-historical-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="assign02_files/figure-html/fig-historical-1.png" class="img-fluid" style="width:100.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-historical-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Historical and cross-national queries. Each panel represents a separate normalization base.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</details>
 </section>
 
 

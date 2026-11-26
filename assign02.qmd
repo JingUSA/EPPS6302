@@ -1,10 +1,265 @@
 ---
 title: "Assignment 2: Google Trends"
+execute:
+  echo: true
+  warning: false
+  message: false
+code-fold: true
+code-summary: "Show R code"
 ---
 
 ::: {.assignment-report}
 # Assignment 2: Google Trends
 
-This assignment has not yet been completed.
+**Two Ways to Get the Same Data**  
+EPPS 6302 — Methods of Data Collection and Production | Fall 2026
+
+## A.1. Data Collection and Query Parameters
+
+The analysis compares Google Trends website exports with data collected using `gtrendsR` (version 1.5.2). The historical cutoff is September 8, 2026, the assignment date; the data were retrieved on November 26, 2026.
+
+| Parameter | Specification |
+|:---|:---|
+| Search terms | Trump, Kamala Harris, Election |
+| Geography | United States (US) |
+| Query window | September 8, 2021–September 8, 2026 |
+| Category / search type | All categories (0) / Web Search |
+| Query type | Search terms, not topics |
+| Website retrieval | November 26, 2026; exact time not recorded |
+| Initial R retrieval | November 26, 2026, 15:04:05 CST |
+| Unit | Normalized search interest (0–100) |
+
+All four website queries used the same geography, category, and search type. The shorter query covers June 10–September 8, 2026; the two-term query removes Election; and the independent news query uses *foldable iPhone*. The latter was selected because the anticipated product announcement received [Reuters coverage on September 8, 2026](https://www.investing.com/news/stock-market-news/apples-ternus-faces-ai-test-as-foldable-iphone-takes-center-stage-4891208). Its peak is 100 in the week labeled September 6, 2026.
+
+```{r}
+#| label: load-cached-data
+library(readr)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+data_dir <- "data/assignment02_sep08"
+
+# Keep the original <1 marker; use 0.5 only for numerical summaries.
+score <- function(x) as.numeric(ifelse(x == "<1", "0.5", x))
+
+read_web <- function(file) {
+  x <- read_csv(file.path(data_dir, file), skip = 2,
+                col_types = cols(.default = col_character()))
+  names(x)[1] <- "date"
+  names(x) <- sub(": \\(United States\\)$", "", names(x))
+  x |>
+    pivot_longer(-date, names_to = "keyword", values_to = "hits") |>
+    mutate(date = as.Date(date), value = score(hits))
+}
+
+read_r <- function(file) {
+  read_csv(file.path(data_dir, file),
+           col_types = cols(.default = col_character())) |>
+    mutate(date = as.Date(substr(date, 1, 10)), value = score(hits))
+}
+
+web <- read_web("web_5years.csv")
+short <- read_web("web_90days.csv")
+two <- read_web("web_2terms.csv")
+news <- read_web("web_custom.csv")
+r <- read_r("r_5years.csv")
+harris <- read_r("r_harris.csv")
+
+# Verify the number of observations and uniqueness of comparison keys.
+stopifnot(nrow(web) == 786L, nrow(r) == 786L,
+          n_distinct(short$date) == 91L,
+          !anyDuplicated(web[c("date", "keyword")]),
+          !anyDuplicated(r[c("date", "keyword")]))
+
+align <- function(a, b) {
+  inner_join(select(a, date, keyword, hits, value),
+             select(b, date, keyword, hits, value),
+             by = c("date", "keyword"), suffix = c("_a", "_b")) |>
+    mutate(difference = value_b - value_a,
+           changed = hits_a != hits_b)
+}
+```
+
+## A.2. Exploring the Website Data
+
+The five-year export contains 262 weekly observations per term (September 5, 2021–September 6, 2026). The shorter query contains 91 daily dates. The weekly labels identify the start of each week, not the exact query boundaries. A score of 100 indicates peak relative search interest within a query; 0 indicates insufficient relative search interest to report a nonzero score, not necessarily zero searches. Google normalizes sampled searches by total searches and rescales the resulting shares ([Google Trends documentation](https://support.google.com/trends/answer/4365533)). Values reported as `<1` are coded as 0.5 for numerical summaries only.
+
+```{r}
+#| label: normalization
+normalization <- align(web, two) |>
+  group_by(keyword) |>
+  summarise(Weeks = n(),
+            `Peak: three terms` = max(value_a),
+            `Peak: two terms` = max(value_b),
+            `Weeks changed` = sum(changed),
+            `Mean change` = mean(difference), .groups = "drop") |>
+  rename(Term = keyword)
+knitr::kable(normalization, digits = 3)
+```
+
+Removing Election raises the remaining scores because the query is rescaled. These increases do not imply an increase in search volume. The three-term series peaks during the week of November 3, 2024, when Election reaches 100.
+
+```{r}
+#| label: fig-us-trends
+#| fig-cap: "Weekly U.S. search interest. Website and R scores coincide for all 786 matched observations."
+#| fig-width: 8
+#| fig-height: 3.5
+#| out-width: "100%"
+ggplot(web, aes(date, value, colour = keyword)) +
+  geom_line(linewidth = 0.65) +
+  scale_colour_manual(values = c("Election" = "#B7791F",
+                                 "Kamala Harris" = "#B54747",
+                                 "Trump" = "#2463A3")) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 25)) +
+  labs(x = NULL, y = "Search interest (0–100)", colour = NULL) +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "bottom", panel.grid.minor = element_blank())
+```
+
+## A.3. R Collection and Measurement Validity
+
+The original script uses Harris rather than Kamala Harris. Holding the other two terms and query settings constant, the series differ in all 262 weeks. Harris has a peak of 11 versus 7 for Kamala Harris, a mean difference of +0.597 index points, and a Pearson correlation of 0.972. A surname is an imperfect proxy for a specific political figure because it can also refer to other people, places, and organizations; the index differences do not identify the share of unrelated searches.
+
+```{r}
+#| label: harris-comparison
+h <- align(filter(r, keyword == "Kamala Harris"),
+           filter(harris, keyword == "Harris") |>
+             mutate(keyword = "Kamala Harris"))
+stopifnot(nrow(h) == 262L)
+knitr::kable(data.frame(
+  Weeks = nrow(h), Changed = sum(h$changed),
+  `Mean difference` = mean(h$difference),
+  Correlation = cor(h$value_a, h$value_b), check.names = FALSE), digits = 3)
+```
+
+The historical R queries cover January 1, 2004–September 8, 2026 (273 monthly dates), using a fixed endpoint instead of the script's rolling `time = "all"`. Tariff peaks in April 2025 in the standalone worldwide and UK queries and the joint US/GB/TW query. In the joint worldwide query of tariff, China military, and Taiwan, Taiwan reaches 100 in August 2022. Scores from separate queries have different normalization bases.
+
+The full R object also contains geographic interest and related queries, beyond the website's downloaded time-series CSV. `interest_by_region` and `related_topics` were returned as empty components in this particular pull. These types of information may be available through other website panels.
+
+```{r}
+#| label: object-structure
+# Read the original object, without contacting Google Trends.
+tct <- readRDS(file.path(data_dir, "r_world_3terms.rds"))
+knitr::kable(data.frame(Component = names(tct),
+                        Rows = as.integer(sapply(tct, NROW))))
+```
+
+## A.4. Comparing the Two Methods
+
+The website and R series match on all 786 date–term pairs, with no difference in either direction. The repeated R queries also yield identical values. The final repeat began 2 minutes and 28 seconds after the first query. This demonstrates short-term stability in these pulls, not guaranteed reproducibility: the underlying sampled searches, normalization, and service-side caching may change.
+
+```{r}
+#| label: method-comparison
+compare <- function(a, b, label) {
+  x <- align(a, b)
+  stopifnot(nrow(x) == nrow(a), nrow(x) == nrow(b))
+  data.frame(Comparison = label, Matched = nrow(x),
+             Identical = sum(!x$changed),
+             `Mean difference` = mean(x$difference),
+             MAE = mean(abs(x$difference)),
+             `Max absolute difference` = max(abs(x$difference)),
+             check.names = FALSE)
+}
+comparison <- bind_rows(
+  compare(web, r, "Website vs. R"),
+  compare(r, read_r("r_5years_repeat.csv"), "Repeat 1 (18 s)"),
+  compare(r, read_r("r_5years_repeat_later.csv"), "Repeat 2 (79 s)"),
+  compare(r, read_r("r_5years_repeat_final.csv"), "Repeat 3 (148 s)")
+)
+knitr::kable(comparison, digits = 3)
+```
+
+| Dimension | Website | R (`gtrendsR`) |
+|:---|:---|:---|
+| Reproducibility | Manual downloads must be archived. | Scripts reproduce query settings, not necessarily identical samples; cache the raw pulls. |
+| Provenance | CSV records terms, geography and category, but not all settings or retrieval time. | Returned columns record query parameters; the script separately logs the actual retrieval time. |
+| Scale | Manual repetition is slow. | Batch collection is easier, but queries with many terms require overlapping batches and a common anchor for comparable scores. |
+| Fragility | Download errors, changed UI, or incorrect filters may go unnoticed. | Unofficial endpoint changes, rate limits, or incomplete results can break queries; check errors, dates, keys, and row counts. |
+
+**Conclusion.** Google Trends is useful for measuring relative search attention, but results depend on the search terms, query window, geography, normalization, and sampling. Archived raw data and recorded parameters are essential for reproducible research.
+
+<details>
+<summary><strong>Supplementary R code and historical plots</strong></summary>
+
+The following collection code reproduces the query design. The actual data are cached as CSV and RDS files. It is displayed as reference code only; rendering this report does not rerun the Google Trends requests. The three repeat calls were executed separately at the recorded times.
+
+```r
+library(gtrendsR)
+library(readr)
+
+data_dir <- "data/assignment02_sep08"
+dir.create(data_dir, recursive = TRUE, showWarnings = FALSE)
+time_5years <- "2021-09-08 2026-09-08"
+time_all <- "2004-01-01 2026-09-08"
+
+collect_trends <- function(filename, ...) {
+  path <- file.path(data_dir, filename)
+  if (file.exists(paste0(path, ".rds"))) {
+    return(readRDS(paste0(path, ".rds")))
+  }
+  pulled_at <- Sys.time()
+  result <- gtrends(...)
+  saveRDS(result, paste0(path, ".rds"))
+  write_csv(result$interest_over_time, paste0(path, ".csv"))
+  writeLines(format(pulled_at, tz = "America/Chicago", usetz = TRUE),
+             paste0(path, "_retrieval.txt"))
+  result
+}
+
+us_query <- function(filename, terms) {
+  collect_trends(filename, keyword = terms, geo = "US",
+                 time = time_5years, gprop = "web", category = 0,
+                 onlyInterest = TRUE)
+}
+terms <- c("Trump", "Kamala Harris", "Election")
+trends_us <- us_query("r_5years", terms)
+trends_harris <- us_query("r_harris", c("Trump", "Harris", "Election"))
+
+tg <- collect_trends("r_tariff_world", keyword = "tariff", geo = "",
+                    time = time_all, gprop = "web", category = 0,
+                    onlyInterest = TRUE)
+tg_gb <- collect_trends("r_tariff_gb", keyword = "tariff", geo = "GB",
+                       time = time_all, gprop = "web", category = 0,
+                       onlyInterest = TRUE)
+tg_countries <- collect_trends("r_tariff_countries", keyword = "tariff",
+                              geo = c("US", "GB", "TW"), time = time_all,
+                              gprop = "web", category = 0, onlyInterest = TRUE)
+tct <- collect_trends("r_world_3terms",
+                      keyword = c("tariff", "China military", "Taiwan"),
+                      geo = "", time = time_all, gprop = "web", category = 0,
+                      onlyInterest = FALSE)
+names(tct)
+sapply(tct, NROW)
+
+# In the actual collection, these calls were run at separate times.
+trends_repeat <- us_query("r_5years_repeat", terms)
+trends_repeat_later <- us_query("r_5years_repeat_later", terms)
+trends_repeat_final <- us_query("r_5years_repeat_final", terms)
+```
+
+```{r}
+#| label: fig-historical
+#| fig-cap: "Historical and cross-national queries. Each panel represents a separate normalization base."
+#| fig-width: 8
+#| fig-height: 5.5
+#| out-width: "100%"
+historical <- bind_rows(
+  read_r("r_tariff_world.csv") |> mutate(query = "Tariff: worldwide", series = "Worldwide"),
+  read_r("r_tariff_gb.csv") |> mutate(query = "Tariff: UK", series = "GB"),
+  read_r("r_tariff_countries.csv") |> mutate(query = "Tariff: US, GB, TW", series = geo),
+  read_r("r_world_3terms.csv") |> mutate(query = "Three terms: worldwide", series = keyword)
+)
+
+ggplot(historical, aes(date, value, colour = series)) +
+  geom_line(linewidth = 0.5) +
+  facet_wrap(~ query, ncol = 2) +
+  scale_y_continuous(limits = c(0, 100)) +
+  labs(x = NULL, y = "Search interest (0–100)", colour = NULL) +
+  theme_minimal(base_size = 11) +
+  theme(legend.position = "bottom", panel.grid.minor = element_blank())
+```
+
+</details>
 
 :::
