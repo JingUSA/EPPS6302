@@ -8,6 +8,74 @@ code-fold: true
 code-summary: "Show R code"
 ---
 
+```{=html}
+<style>
+/* Assignment 4 only: preserve the shared course-site layout. */
+.assignment-report.assignment04-report {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+.assignment04-report table {
+  display: table !important;
+  width: 100% !important;
+  max-width: 100%;
+  table-layout: auto !important;
+  border-collapse: collapse;
+  margin: 14px 0 24px;
+  font-size: 0.88em;
+  line-height: 1.5;
+}
+.assignment04-report table colgroup { display: table-column-group !important; }
+.assignment04-report table col { display: table-column !important; width: auto !important; }
+.assignment04-report table thead { display: table-header-group !important; }
+.assignment04-report table tbody { display: table-row-group !important; }
+.assignment04-report table tfoot { display: table-footer-group !important; }
+.assignment04-report table tr { display: table-row !important; width: auto !important; }
+.assignment04-report table th,
+.assignment04-report table td {
+  display: table-cell !important;
+  width: auto !important;
+  min-width: 0;
+  padding: 9px 12px !important;
+  vertical-align: top;
+  white-space: normal;
+  overflow-wrap: normal;
+  border-bottom: 1px solid #dedede;
+}
+.assignment04-report table th {
+  font-weight: 600;
+  border-top: 1px solid #999;
+  border-bottom: 1px solid #999;
+  background: #f7f7f7;
+}
+.assignment04-report table caption {
+  caption-side: top;
+  text-align: left;
+  font-weight: 500;
+  padding: 0 0 8px;
+}
+.assignment04-report .cell-output-display,
+.assignment04-report .quarto-table-container,
+.assignment04-report .table-responsive {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.assignment04-report pre { max-width: 100%; overflow-x: auto; }
+.assignment04-report details { margin: 12px 0 18px; }
+.assignment04-report img { max-width: 100%; height: auto; }
+@media (max-width: 780px) {
+  .assignment04-report table { font-size: 0.8em; }
+  .assignment04-report table th,
+  .assignment04-report table td { padding: 7px 8px !important; }
+}
+</style>
+```
+
+:::: {.assignment-report .assignment04-report}
+
+# Assignment 4: Webscraping 1
+
 **Web Scraping and API-Based Data Collection**  
 EPPS 6302 — Methods of Data Collection and Production | Fall 2026
 
@@ -334,3 +402,4 @@ knitr::kable(format_comparison(latest_valid), digits = 3,
 
 **Failure detection.** Required fields, unique incident identifiers, date formats, country mappings and row counts would be tested before analysis. Changes in column names, missingness, duplicate records or unexpected changes in coverage would stop the workflow for manual review. New versions would be compared against earlier snapshots to identify revised attribution or dates, retaining both versions and a change log. A sample of disclosure dates would be checked against original public reports. Downstream models would use a frozen, documented snapshot rather than a continuously changing website.
 
+::::

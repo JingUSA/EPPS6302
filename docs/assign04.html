@@ -173,6 +173,69 @@ document.addEventListener('DOMContentLoaded', function () {
 </header>
 
 
+<style>
+/* Assignment 4 only: preserve the shared course-site layout. */
+.assignment-report.assignment04-report {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+.assignment04-report table {
+  display: table !important;
+  width: 100% !important;
+  max-width: 100%;
+  table-layout: auto !important;
+  border-collapse: collapse;
+  margin: 14px 0 24px;
+  font-size: 0.88em;
+  line-height: 1.5;
+}
+.assignment04-report table colgroup { display: table-column-group !important; }
+.assignment04-report table col { display: table-column !important; width: auto !important; }
+.assignment04-report table thead { display: table-header-group !important; }
+.assignment04-report table tbody { display: table-row-group !important; }
+.assignment04-report table tfoot { display: table-footer-group !important; }
+.assignment04-report table tr { display: table-row !important; width: auto !important; }
+.assignment04-report table th,
+.assignment04-report table td {
+  display: table-cell !important;
+  width: auto !important;
+  min-width: 0;
+  padding: 9px 12px !important;
+  vertical-align: top;
+  white-space: normal;
+  overflow-wrap: normal;
+  border-bottom: 1px solid #dedede;
+}
+.assignment04-report table th {
+  font-weight: 600;
+  border-top: 1px solid #999;
+  border-bottom: 1px solid #999;
+  background: #f7f7f7;
+}
+.assignment04-report table caption {
+  caption-side: top;
+  text-align: left;
+  font-weight: 500;
+  padding: 0 0 8px;
+}
+.assignment04-report .cell-output-display,
+.assignment04-report .quarto-table-container,
+.assignment04-report .table-responsive {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.assignment04-report pre { max-width: 100%; overflow-x: auto; }
+.assignment04-report details { margin: 12px 0 18px; }
+.assignment04-report img { max-width: 100%; height: auto; }
+@media (max-width: 780px) {
+  .assignment04-report table { font-size: 0.8em; }
+  .assignment04-report table th,
+  .assignment04-report table td { padding: 7px 8px !important; }
+}
+</style>
+<section id="assignment-4-webscraping-1" class="assignment-report assignment04-report">
+<h1>Assignment 4: Webscraping 1</h1>
 <p><strong>Web Scraping and API-Based Data Collection</strong><br>
 EPPS 6302 — Methods of Data Collection and Production | Fall 2026</p>
 <h2 id="permission-and-provenance" class="anchored">0. Permission and provenance</h2>
@@ -3395,6 +3458,7 @@ EPPS 6302 — Methods of Data Collection and Production | Fall 2026</p>
 <p><strong>API and collection strategy.</strong> The tracker offers an official bulk download. No documented public API was identified on the tracker or in the reviewed materials. The official download is therefore the primary acquisition method; scraping would only be considered for essential missing fields, such as disclosure dates, if automated access and the intended use are permitted. Dates of occurrence and public disclosure would be coded separately; records without verified disclosure dates would be flagged rather than assigned arbitrary dates.</p>
 <p><strong>Volume, rate limiting and caching.</strong> The initial acquisition requires one official download, with quarterly checks for updates consistent with CFR’s stated update schedule. If approved supplemental page requests are necessary, only unmatched records would be visited, sequentially, at no more than one request every five seconds, using a descriptive user agent. HTTP 429 or 503 responses would trigger a pause and observance of <code>Retry-After</code>; repeated failures would stop collection. Original files, retrieval timestamps, URLs, checksums, variable definitions and data-processing code would be archived. Public release would be limited to materials authorized for redistribution.</p>
 <p><strong>Failure detection.</strong> Required fields, unique incident identifiers, date formats, country mappings and row counts would be tested before analysis. Changes in column names, missingness, duplicate records or unexpected changes in coverage would stop the workflow for manual review. New versions would be compared against earlier snapshots to identify revised attribution or dates, retaining both versions and a change log. A sample of disclosure dates would be checked against original public reports. Downstream models would use a frozen, documented snapshot rather than a continuously changing website.</p>
+</section>
 
 
 <script id="quarto-html-after-body" type="application/javascript">
