@@ -1,0 +1,99 @@
+---
+title: "Teaching"
+format:
+  html:
+    css: [teaching.css, styles.css]
+---
+
+```{=html}
+<div class="content">
+<h1 class="page-title">
+            TEACHING
+        </h1>
+<p class="intro">
+            My teaching experience at The University of Texas at Dallas
+            includes independent instruction and teaching assistance in cybersecurity,
+            quantitative methods, technology policy, digital economics, comparative politics, and
+            American government.
+        </p>
+<!-- INSTRUCTOR OF RECORD -->
+<h2 class="section-title">
+            Instructor of Record
+        </h2>
+<div class="course">
+<div class="course-name">
+                GOVT 2306: State and Local Government
+            </div>
+<div class="course-date">
+                Summer 2026
+            </div>
+</div>
+<!-- TEACHING ASSISTANT -->
+<h2 class="section-title">
+            Teaching Assistant
+        </h2>
+<div class="course">
+<div class="course-name">
+                PPPE 6353 / ECON 6362:
+                Industry, Technology, and Science Policy
+            </div>
+<div class="course-date">
+                Spring 2026
+            </div>
+</div>
+<div class="course">
+<div class="course-name">
+                PSCI / PPOL / ECON 4325:
+                Digital Economics and the Law
+            </div>
+<div class="course-date">
+                Spring 2026
+            </div>
+</div>
+<div class="course">
+<div class="course-name">
+                PPPE / PSCI 6303:
+                Cyber Security Policy
+            </div>
+<div class="course-date">
+                Fall 2025
+            </div>
+</div>
+<div class="course">
+<div class="course-name">
+                EPPS 6313:
+                Introduction to Quantitative Methods
+            </div>
+<div class="course-date">
+                Fall 2025
+            </div>
+</div>
+<div class="course">
+<div class="course-name">
+                GOVT 2305:
+                American National Government
+            </div>
+<div class="course-date">
+                Fall 2023, Fall 2024, Spring 2025
+            </div>
+</div>
+<div class="course">
+<div class="course-name">
+                GOVT 2306:
+                State and Local Government
+            </div>
+<div class="course-date">
+                Fall 2024
+            </div>
+</div>
+<div class="course">
+<div class="course-name">
+                PSCI 3350:
+                Comparative Politics
+            </div>
+<div class="course-date">
+                Spring 2024
+            </div>
+</div>
+</div>
+```

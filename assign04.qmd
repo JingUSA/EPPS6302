@@ -1,0 +1,10 @@
+---
+title: "Assignment 4: Web Scraping"
+---
+
+::: {.assignment-report}
+# Assignment 4: Web Scraping
+
+This assignment has not yet been completed.
+
+:::

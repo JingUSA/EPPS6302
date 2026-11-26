@@ -1,0 +1,202 @@
+/* GENERAL */
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #ffffff;
+            color: #222222;
+            font-family: 'Inter', Arial, Helvetica, sans-serif;
+            font-weight: 400;
+            line-height: 1.6;
+        }
+
+
+        /* HEADER - SAME AS HOME */
+
+        .header {
+            width: 90%;
+            max-width: 1280px;
+            margin: 0 auto;
+            padding-top: 30px;
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .name {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            white-space: nowrap;
+        }
+
+        .nav {
+            display: flex;
+            gap: 28px;
+            align-items: center;
+        }
+
+        .nav a {
+            color: #222222;
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .nav a:hover,
+        .nav a.active {
+            border-bottom: 1px solid #222222;
+        }
+
+
+        /* MAIN CONTENT - SAME WIDTH AS HOME */
+
+        .content {
+            width: 88%;
+            max-width: 1180px;
+            margin: 60px auto 60px auto;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-top: 0;
+            margin-bottom: 40px;
+        }
+
+
+        /* SECTION HEADINGS - NOT BOLD */
+
+        h2 {
+            font-size: 21px;
+            font-weight: 400;
+            margin-top: 40px;
+            margin-bottom: 20px;
+        }
+
+
+        /* RESEARCH PAPERS */
+
+        .paper {
+            margin-bottom: 30px;
+        }
+
+        .paper-title {
+            font-size: 19px;
+            font-weight: 700;
+        }
+
+        .paper-meta {
+            font-size: 16px;
+            font-weight: 400;
+            font-style: italic;
+            margin-top: 4px;
+        }
+
+        .paper-desc {
+            font-size: 17px;
+            font-weight: 400;
+            margin-top: 8px;
+            max-width: 950px;
+        }
+
+        a {
+            color: #222222;
+        }
+
+
+        /* BLUE LINKS - COMPUTATIONAL PROJECTS */
+
+        .paper-desc a {
+            color: #0066CC;
+            text-decoration: underline;
+        }
+
+        .paper-desc a:hover {
+            color: #004F9F;
+        }
+
+
+        /* LARGE DESKTOP - SAME AS HOME */
+
+        @media (min-width: 1600px) {
+
+            .header {
+                max-width: 1380px;
+            }
+
+            .content {
+                max-width: 1250px;
+            }
+        }
+
+
+        /* TABLET */
+
+        @media (max-width: 1100px) {
+
+            .header {
+                width: 92%;
+            }
+
+            .content {
+                width: 90%;
+            }
+        }
+
+
+        /* MOBILE */
+
+        @media (max-width: 780px) {
+
+            .header {
+                width: calc(100% - 40px);
+                flex-direction: column;
+                gap: 20px;
+                padding-top: 25px;
+            }
+
+            .name {
+                font-size: 30px;
+            }
+
+            .nav {
+                gap: 18px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .nav a {
+                font-size: 14px;
+            }
+
+            .content {
+                width: calc(100% - 46px);
+                margin-top: 45px;
+                margin-bottom: 50px;
+            }
+
+            h1 {
+                font-size: 25px;
+            }
+
+            h2 {
+                font-size: 20px;
+            }
+
+            .paper-title {
+                font-size: 18px;
+            }
+
+            .paper-meta {
+                font-size: 15px;
+            }
+
+            .paper-desc {
+                font-size: 16px;
+            }
+        }

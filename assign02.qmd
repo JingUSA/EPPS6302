@@ -1,0 +1,10 @@
+---
+title: "Assignment 2: Google Trends"
+---
+
+::: {.assignment-report}
+# Assignment 2: Google Trends
+
+This assignment has not yet been completed.
+
+:::

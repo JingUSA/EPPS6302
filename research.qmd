@@ -1,0 +1,105 @@
+---
+title: "Research"
+format:
+  html:
+    css: [research.css, styles.css]
+---
+
+```{=html}
+<div class="content">
+<h1>RESEARCH</h1>
+<!-- REVISE AND RESUBMIT -->
+<h2>Revise and Resubmit</h2>
+<div class="paper">
+<div class="paper-title">
+                Unpacking Cyber Deterrence under the Budapest Convention: Punishment, Denial, and Entanglement
+            </div>
+<div class="paper-meta">
+                Humza Khan, Jing Tao and Pengfei Zhang
+                · R&amp;R at Journal of Cyber Policy
+            </div>
+</div>
+<div class="paper">
+<div class="paper-title">
+                The Long Run Economic Effects of Increased Copyright Protection: Evidence from the WIPO Copyright Treaty
+            </div>
+<div class="paper-meta">
+                Pengfei Zhang, Afif Mazhar and Jing Tao
+                · R&amp;R at Journal of Law and Economics
+            </div>
+</div>
+<!-- UNDER REVIEW -->
+<h2>Under Review</h2>
+<div class="paper">
+<div class="paper-title">
+                When Cyber Espionage Becomes Public: Disclosure and Institutional Confidence across Political Regimes
+            </div>
+<div class="paper-meta">
+                Jing Tao · Under review at Politics &amp; Policy
+            </div>
+</div>
+<div class="paper">
+<div class="paper-title">
+                Ruling by Money: Fiscal Centralization and Authoritarian Resilience in Post-Reform China
+            </div>
+<div class="paper-meta">
+                Jing Tao · Under review at Asian Politics &amp; Policy
+            </div>
+</div>
+<div class="paper">
+<div class="paper-title">
+                From Enforcement to Symbolism: Border Arrests, Tunnels, and Trump's 2024 Vote Share
+            </div>
+<div class="paper-meta">
+                Jing Tao · Under review at Border and Regional Studies
+            </div>
+</div>
+<!-- WORKING PAPERS -->
+<h2>Working Papers</h2>
+<div class="paper">
+<div class="paper-title">
+                Holding AI Liable?
+                An Experimental Study of Public Opinion on AI Safety
+            </div>
+<div class="paper-meta">
+                Jing Tao
+            </div>
+</div>
+<div class="paper">
+<div class="paper-title">
+                Do National AI Strategies Shape Policymaking? Evidence from Cross-National Policy Activity
+            </div>
+<div class="paper-meta">
+                Jing Tao
+            </div>
+</div>
+<!-- COMPUTATIONAL PROJECTS -->
+<h2>Computational Projects</h2>
+<div class="paper">
+<div class="paper-title">
+                Cyber Operations Incident Database (COID)
+            </div>
+<div class="paper-desc">
+                A normalized relational database for cross-national analysis
+                of state-sponsored cyber activity.
+
+                <a href="https://github.com/JingUSA/COID" rel="noopener noreferrer" target="_blank">
+                    GitHub Repository
+                </a>
+</div>
+</div>
+<div class="paper">
+<div class="paper-title">
+                The Cyber Conflict Globe:
+                Dynamic 3D Visualization of State-Linked Operations, 2005–2023
+            </div>
+<div class="paper-desc">
+                Interactive spatial-temporal visualization of state-linked cyber operations.
+
+                <a href="https://www.youtube.com/watch?v=7BMBoaasoTU" rel="noopener noreferrer" target="_blank">
+                    Video Demo
+                </a>
+</div>
+</div>
+</div>
+```

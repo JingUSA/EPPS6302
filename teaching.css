@@ -1,0 +1,214 @@
+/* GENERAL */
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #ffffff;
+            color: #222222;
+            font-family: 'Inter', Arial, Helvetica, sans-serif;
+            font-weight: 400;
+            line-height: 1.6;
+        }
+
+
+        /* HEADER - SAME AS HOME */
+
+        .header {
+            width: 90%;
+            max-width: 1280px;
+            margin: 0 auto;
+            padding-top: 30px;
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .name {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            white-space: nowrap;
+        }
+
+        .nav {
+            display: flex;
+            gap: 28px;
+            align-items: center;
+        }
+
+        .nav a {
+            color: #222222;
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .nav a:hover,
+        .nav a.active {
+            border-bottom: 1px solid #222222;
+        }
+
+
+        /* MAIN CONTENT - SAME WIDTH AS HOME */
+
+        .content {
+            width: 88%;
+            max-width: 1180px;
+            margin: 60px auto 60px auto;
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 600;
+            margin-top: 0;
+            margin-bottom: 40px;
+        }
+
+        .intro {
+            max-width: 980px;
+            font-size: 18px;
+            font-weight: 400;
+            line-height: 1.7;
+            margin-bottom: 40px;
+        }
+
+
+        /* TEACHING SECTIONS */
+
+        .section-title {
+            font-size: 21px;
+            font-weight: 600;
+            margin-top: 40px;
+            margin-bottom: 22px;
+        }
+
+
+        /* COURSE ROWS */
+
+        .course {
+            display: grid;
+
+            grid-template-columns:
+                minmax(0, 1fr)
+                auto;
+
+            column-gap: 60px;
+            align-items: start;
+            margin-bottom: 18px;
+        }
+
+        .course-name {
+            font-size: 19px;
+            font-weight: 400;
+        }
+
+        .course-date {
+            font-size: 16px;
+            font-weight: 400;
+            white-space: nowrap;
+            text-align: right;
+        }
+
+        .institution {
+            grid-column: 1 / 2;
+            font-size: 16px;
+            font-weight: 400;
+            margin-top: 3px;
+        }
+
+
+        /* LARGE DESKTOP - SAME AS HOME */
+
+        @media (min-width: 1600px) {
+
+            .header {
+                max-width: 1380px;
+            }
+
+            .content {
+                max-width: 1250px;
+            }
+        }
+
+
+        /* TABLET */
+
+        @media (max-width: 1100px) {
+
+            .header {
+                width: 92%;
+            }
+
+            .content {
+                width: 90%;
+            }
+        }
+
+
+        /* MOBILE */
+
+        @media (max-width: 780px) {
+
+            .header {
+                width: calc(100% - 40px);
+                flex-direction: column;
+                gap: 20px;
+                padding-top: 25px;
+            }
+
+            .name {
+                font-size: 30px;
+            }
+
+            .nav {
+                gap: 18px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .nav a {
+                font-size: 14px;
+            }
+
+            .content {
+                width: calc(100% - 46px);
+                margin-top: 45px;
+                margin-bottom: 50px;
+            }
+
+            .page-title {
+                font-size: 25px;
+                margin-bottom: 35px;
+            }
+
+            .intro {
+                font-size: 17px;
+            }
+
+            .section-title {
+                font-size: 20px;
+            }
+
+            .course {
+                grid-template-columns: 1fr;
+                row-gap: 3px;
+                margin-bottom: 22px;
+            }
+
+            .course-name {
+                font-size: 18px;
+            }
+
+            .course-date {
+                font-size: 15px;
+                text-align: left;
+            }
+
+            .institution {
+                font-size: 15px;
+            }
+        }

@@ -1,0 +1,29 @@
+<header class="header">
+<div class="name">EPPS 6302: Methods of Data Collection and Production</div>
+<nav class="nav">
+<a href="index.html">
+                HOME
+            </a>
+<a href="JING_TAO_CV.pdf" target="_blank">
+                CV
+            </a>
+<a href="research.html">
+                RESEARCH
+            </a>
+<a href="teaching.html">
+                TEACHING
+            </a>
+<div class="assignment-menu"><button aria-controls="assignment-links" aria-expanded="false" type="button">ASSIGNMENTS <span aria-hidden="true">▾</span></button><div class="assignment-links" hidden="" id="assignment-links"><a href="assign01.html">Assignment 1: Create a Quarto Website</a><a href="assign02.html">Assignment 2: Google Trends</a><a href="assign03.html">Assignment 3: ACS via tidycensus</a><a href="assign04.html">Assignment 4: Web Scraping</a><a href="assign05.html">Assignment 5: Government Data API</a><a href="assign06.html">Assignment 6: Text Analytics with quanteda</a><a href="assign07.html">Assignment 7: YouTube Data API</a><a href="assign08.html">Assignment 8: Record Linkage</a></div></div></nav>
+</header>
+<script>
+document.addEventListener('DOMContentLoaded',function(){
+ const menu=document.querySelector('.assignment-menu'), button=menu.querySelector('button'), links=menu.querySelector('.assignment-links');
+ const toggle=(open)=>{links.hidden=!open;button.setAttribute('aria-expanded',String(open));};
+ button.addEventListener('click',()=>toggle(links.hidden));
+ document.addEventListener('click',e=>{if(!menu.contains(e.target))toggle(false);});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'){toggle(false);button.focus();}});
+ const page=location.pathname.split('/').pop()||'index.html';
+ document.querySelectorAll('.nav a').forEach(a=>{if(a.getAttribute('href')===page){a.classList.add('active');a.setAttribute('aria-current','page');}});
+ if(/^assign\d+\.html$/.test(page))button.classList.add('active');
+});
+</script>

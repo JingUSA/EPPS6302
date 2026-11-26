@@ -1,0 +1,301 @@
+/* ==============================
+           GENERAL
+        ============================== */
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #ffffff;
+            color: #222222;
+
+            font-family:
+                'Inter', Arial, Helvetica, sans-serif;
+
+            font-weight: 400;
+            line-height: 1.6;
+        }
+
+
+        /* ==============================
+           HEADER
+        ============================== */
+
+        .header {
+            width: 90%;
+            max-width: 1280px;
+
+            margin: 0 auto;
+            padding-top: 30px;
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .name {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            white-space: nowrap;
+        }
+
+        .nav {
+            display: flex;
+            gap: 28px;
+            align-items: center;
+        }
+
+        .nav a {
+            color: #222222;
+            text-decoration: none;
+
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .nav a:hover,
+        .nav a.active {
+            border-bottom: 1px solid #222222;
+        }
+
+
+        /* ==============================
+           MAIN LAYOUT
+        ============================== */
+
+        .main {
+            width: 88%;
+            max-width: 1180px;
+
+            margin: 60px auto 60px auto;
+
+            display: grid;
+
+            grid-template-columns:
+                360px minmax(0, 720px);
+
+            gap: 75px;
+
+            justify-content: center;
+            align-items: start;
+        }
+
+
+        /* ==============================
+           PHOTO
+        ============================== */
+
+        .photo {
+            width: 100%;
+        }
+
+        .photo img {
+            width: 100%;
+            height: auto;
+
+            display: block;
+            object-fit: cover;
+        }
+
+
+        /* ==============================
+           ABOUT
+        ============================== */
+
+        .about {
+            width: 100%;
+            min-width: 0;
+        }
+
+        .about h2 {
+            font-size: 22px;
+            font-weight: 600;
+
+            margin-top: 0;
+            margin-bottom: 25px;
+        }
+
+        .about p {
+            font-size: 18px;
+            font-weight: 400;
+            line-height: 1.6;
+
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+
+        .about a {
+            color: #222222;
+            text-decoration: none;
+        }
+
+        .about a:hover {
+            text-decoration: underline;
+        }
+
+
+        /* ==============================
+           CONTACT
+        ============================== */
+
+        .contact {
+            margin-top: 25px;
+        }
+
+        .contact p {
+            font-size: 16px;
+
+            margin-top: 0;
+            margin-bottom: 7px;
+        }
+
+
+        /* ==============================
+           BLUE LINKS
+        ============================== */
+
+        /* Email */
+        .contact a[href^="mailto:"] {
+            color: #0066CC;
+        }
+
+        /* LinkedIn */
+        .contact a[href*="linkedin.com"] {
+            color: #0066CC;
+        }
+
+        /* GitHub - Blue */
+        .contact a[href*="github.com"] {
+            color: #0066CC;
+        }
+
+        /* Underline on hover */
+        .contact a:hover {
+            text-decoration: underline;
+        }
+
+
+        /* ==============================
+           LARGE DESKTOP
+        ============================== */
+
+        @media (min-width: 1600px) {
+
+            .header {
+                max-width: 1380px;
+            }
+
+            .main {
+                max-width: 1250px;
+
+                grid-template-columns:
+                    380px minmax(0, 740px);
+
+                gap: 85px;
+            }
+
+            .about p {
+                font-size: 19px;
+            }
+
+            .about h2 {
+                font-size: 23px;
+            }
+        }
+
+
+        /* ==============================
+           TABLET
+        ============================== */
+
+        @media (max-width: 1100px) {
+
+            .header {
+                width: 92%;
+            }
+
+            .main {
+                width: 90%;
+
+                grid-template-columns:
+                    minmax(250px, 320px)
+                    minmax(0, 1fr);
+
+                gap: 45px;
+            }
+
+            .about p {
+                font-size: 17px;
+            }
+        }
+
+
+        /* ==============================
+           MOBILE
+        ============================== */
+
+        @media (max-width: 780px) {
+
+            .header {
+                width: calc(100% - 40px);
+
+                flex-direction: column;
+                gap: 20px;
+
+                padding-top: 25px;
+            }
+
+            .name {
+                font-size: 30px;
+            }
+
+            .nav {
+                gap: 18px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .nav a {
+                font-size: 14px;
+            }
+
+            .main {
+                width: calc(100% - 46px);
+
+                grid-template-columns: 1fr;
+
+                margin-top: 45px;
+                margin-bottom: 50px;
+
+                gap: 35px;
+            }
+
+            .photo {
+                width: 100%;
+                text-align: center;
+            }
+
+            .photo img {
+                width: 100%;
+                max-width: 340px;
+
+                margin: 0 auto;
+            }
+
+            .about h2 {
+                font-size: 21px;
+                margin-bottom: 20px;
+            }
+
+            .about p {
+                font-size: 17px;
+                line-height: 1.65;
+            }
+
+            .contact p {
+                font-size: 15px;
+            }
+        }

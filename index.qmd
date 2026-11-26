@@ -1,0 +1,68 @@
+---
+title: "Home"
+format:
+  html:
+    css: [index.css, styles.css]
+---
+
+```{=html}
+<div class="main">
+<!-- PHOTO -->
+<div class="photo">
+<img alt="Jing Tao" src="HEADSHOT_2_JINGTAO.png"/>
+</div>
+<!-- ABOUT -->
+<div class="about">
+<h2>
+                ABOUT
+            </h2>
+<p>
+                Welcome to my page!
+            </p>
+<p>
+                I am a Ph.D. candidate in Political Science at
+                The University of Texas at Dallas. I also serve as an Editorial Assistant for <em>Political Analysis</em>, assisting with manuscript processing, reviewer identification, and computational replication checks.
+            </p>
+<p>
+                My research focuses on comparative politics,
+                digital politics, and political methodology,
+                particularly artificial intelligence (AI), cybersecurity,
+                misinformation, public opinion, and political trust.
+            </p>
+<p>
+                My current research examines how cyber espionage disclosures shape institutional confidence, how citizens assign responsibility for harmful AI systems, and how national AI strategies influence subsequent government policymaking.
+            </p>
+<p>
+                Methodologically, I use causal inference,
+                survey experiments, computational social science,
+                and quantitative methods.
+            </p>
+<!-- ==============================
+                 CONTACT
+            ============================== -->
+<div class="contact">
+<p>
+                    Contact:
+                    <a href="mailto:Jing.Tao@UTDallas.edu">
+                        Jing.Tao@UTDallas.edu
+                    </a>
+</p>
+<p>
+<a href="https://www.linkedin.com/in/jing-tao-2b634b23a/" target="_blank">
+
+                        LinkedIn
+
+                    </a>
+
+                       |   
+
+                    <a href="https://github.com/JingUSA" target="_blank">
+
+                        GitHub
+
+                    </a>
+</p>
+</div>
+</div>
+</div>
+```

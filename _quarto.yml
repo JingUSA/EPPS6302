@@ -1,0 +1,21 @@
+project:
+  type: website
+  output-dir: docs
+  render:
+    - "*.qmd"
+  resources:
+    - "*.pdf"
+    - "*.png"
+    - "*.jpg"
+    - ".nojekyll"
+website:
+  title: "EPPS 6302: Methods of Data Collection and Production"
+format:
+  html:
+    theme: none
+    page-layout: full
+    toc: false
+    include-in-header: fonts.html
+    include-before-body: header.html
+    css: [research.css, styles.css]
+editor: source
