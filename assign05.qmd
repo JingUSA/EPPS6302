@@ -1,10 +1,290 @@
 ---
 title: "Assignment 5: Government Data API"
+execute:
+  echo: true
+  warning: false
+  message: false
+code-fold: true
+code-summary: "Show R code"
 ---
 
-::: {.assignment-report}
+```{=html}
+<style>
+/* Assignment 5 only: preserve the shared course-site layout. */
+.assignment-report.assignment05-report {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+.assignment05-report table {
+  display: table !important;
+  width: 100% !important;
+  max-width: 100%;
+  table-layout: auto !important;
+  border-collapse: collapse;
+  margin: 14px 0 24px;
+  font-size: 0.88em;
+  line-height: 1.5;
+}
+.assignment05-report table colgroup { display: table-column-group !important; }
+.assignment05-report table col { display: table-column !important; width: auto !important; }
+.assignment05-report table thead { display: table-header-group !important; }
+.assignment05-report table tbody { display: table-row-group !important; }
+.assignment05-report table tfoot { display: table-footer-group !important; }
+.assignment05-report table tr { display: table-row !important; width: auto !important; }
+.assignment05-report table th,
+.assignment05-report table td {
+  display: table-cell !important;
+  width: auto !important;
+  min-width: 0;
+  padding: 9px 12px !important;
+  vertical-align: top;
+  white-space: normal;
+  overflow-wrap: normal;
+  border-bottom: 1px solid #dedede;
+}
+.assignment05-report table th {
+  font-weight: 600;
+  border-top: 1px solid #999;
+  border-bottom: 1px solid #999;
+  background: #f7f7f7;
+}
+.assignment05-report table caption {
+  caption-side: top;
+  text-align: left;
+  font-weight: 500;
+  padding: 0 0 8px;
+}
+.assignment05-report .cell-output-display,
+.assignment05-report .quarto-table-container,
+.assignment05-report .table-responsive {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.assignment05-report pre { max-width: 100%; overflow-x: auto; }
+.assignment05-report details { margin: 12px 0 18px; }
+.assignment05-report img { max-width: 100%; height: auto; }
+@media (max-width: 780px) {
+  .assignment05-report table { font-size: 0.8em; }
+  .assignment05-report table th,
+  .assignment05-report table td { padding: 7px 8px !important; }
+}
+</style>
+```
+
+:::: {.assignment-report .assignment05-report}
+
 # Assignment 5: Government Data API
 
-This assignment has not yet been completed.
+**Collecting U.S. Senate Foreign Relations Committee Hearings**  
+EPPS 6302 — Methods of Data Collection and Production | Fall 2026
 
+## 0. API registration and authentication
+
+A GovInfo API key was obtained through [GovInfo API registration](https://www.govinfo.gov/api-signup) and stored locally in `.Renviron` as `GOVINFO_API_KEY`. The authenticated `/collections` request returned HTTP 200 on November 26, 2026 (CST). The key, original PDFs and raw API responses are excluded from the public website. The examples below are illustrative acquisition code and are not executed during rendering.
+
+```{r}
+#| eval: false
+library(httr2)
+api_key <- Sys.getenv("GOVINFO_API_KEY")
+stopifnot(nzchar(api_key))
+base_url <- "https://api.govinfo.gov"
+collections <- request(paste0(base_url, "/collections")) |>
+  req_url_query(api_key = api_key) |>
+  req_perform()
+resp_status(collections)
+```
+
+## 1. Manual search and export
+
+The [GovInfo search interface](https://www.govinfo.gov/app/search/) was searched on November 26, 2026, using the following query and the **Date New to Old** sort order:
+
+```text
+collection:CHRG AND chamber:senate AND committee:"Foreign Relations"
+```
+
+The search reported 1,211 results. The JSON export contained 1,000 records and 999 distinct package IDs. The first ten distinct package IDs, in the exported order, were selected. The search includes hearings of the committee and its subcommittees. Recency is defined by the GovInfo `publishdate` sort field, not the date a document was added to the API or its last modification date.
+
+| Rank | GovInfo date | Hearing title | Package ID |
+|---:|:---|:---|:---|
+| 1 | 2026-04-30 | Sabotage in the Baltic Sea, Implications for European Security, and Lessons for the Indo-Pacific | CHRG-119shrg64579 |
+| 2 | 2026-03-24 | Arms Control and Transforming International Security Functions at the State Department | CHRG-119shrg63909 |
+| 3 | 2026-02-04 | A Pathway to European Energy Security | CHRG-119shrg63707 |
+| 4 | 2026-02-03 | Countering Terrorism in North Africa: Opportunities and Challenges | CHRG-119shrg64059 |
+| 5 | 2025-12-10 | Maritime Security in Africa: Assessing Threats to Commercial Diplomacy and National Security Interests | CHRG-119shrg63168 |
+| 6 | 2025-10-07 | Combating the People's Republic of China's Illegal, Coercive, Aggressive, and Deceptive Behavior in the Indo-Pacific | CHRG-119shrg62398 |
+| 7 | 2025-09-30 | The Future of U.S. Black Sea Strategy | CHRG-119shrg62961 |
+| 8 | 2025-07-22 | The Status of Democracy and Human Rights in Hong Kong, Five Years After the PRC's Judicial Takeover | CHRG-119shrg61656 |
+| 9 | 2025-06-18 | NATO Summit 2025: An Assessment of Transatlantic Security Cooperation | CHRG-119shrg61565 |
+| 10 | 2025-05-13 | East Africa & the Horn: At a Turning Point or Breaking Point? | CHRG-119shrg60820 |
+
+```{r}
+#| eval: false
+library(jsonlite)
+library(dplyr)
+manual_raw <- read_json("data/assignment05/manual_search.json")
+manual_top10 <- bind_rows(manual_raw$resultSet) |>
+  mutate(index = as.integer(index)) |>
+  arrange(index) |>
+  distinct(packageId, .keep_all = TRUE) |>
+  slice_head(n = 10)
+```
+
+## 2. GovInfo API: collections, search, packages and pagination
+
+The [GovInfo API documentation](https://api.govinfo.gov/docs) was used to construct requests. The Congressional Hearings collection endpoint `/collections/CHRG/2026-01-01T00:00:00Z` returned HTTP 200. The Search API used the identical query and descending `publishdate` order, with 100 records per page. Passing the first response's `offsetMark` into the next request retrieved a second page of 100 records; the two pages had no overlapping package IDs. Only two pages were tested because the assignment required ten documents, not an exhaustive collection.
+
+```{r}
+#| eval: false
+body <- list(
+  query = manual_raw$searchTerms,
+  pageSize = 100,
+  offsetMark = "*",
+  sorts = list(list(field = "publishdate", sortOrder = "DESC"))
+)
+search_api <- function(body) {
+  request(paste0(base_url, "/search")) |>
+    req_url_query(api_key = api_key) |>
+    req_body_json(body) |>
+    req_perform() |>
+    resp_body_json()
+}
+found <- search_api(body)
+body$offsetMark <- found$offsetMark
+page2 <- search_api(body)
+
+# Extract scalar fields rather than coercing unequal-length nested arrays.
+scalar <- function(x) {
+  if (is.null(x) || length(x) == 0L) return(NA_character_)
+  as.character(x[[1]])
+}
+api_top10 <- purrr::map_dfr(found$results, function(x) {
+  tibble(packageId = scalar(x$packageId),
+         granuleId = scalar(x$granuleId),
+         title = scalar(x$title),
+         dateIssued = scalar(x$dateIssued))
+}) |> distinct(packageId, .keep_all = TRUE) |> slice_head(n = 10)
+```
+
+| Endpoint or check | Result |
+|:---|:---|
+| `/collections` | HTTP 200 |
+| CHRG collection endpoint | HTTP 200 |
+| Search result count | 1,211 |
+| Page 1 / Page 2 | 100 / 100 records |
+| Package IDs shared across the first two pages | 0 |
+| Package summaries / Granule summaries | 10 / 10 successful responses |
+
+Two problems occurred during implementation. First, direct row-binding of the Search API response failed because nested `governmentAuthor` and `download` fields had unequal lengths. Extracting the scalar fields record by record resolved the problem. Second, the package summaries contained PREMIS, ZIP and MODS links but no PDF links. The corresponding granule summaries contained `pdfLink` and `txtLink` for all ten hearings, in addition to PREMIS, ZIP and MODS links. For these documents, the granule ID equaled the package ID.
+
+```{r}
+#| eval: false
+get_summary <- function(path) {
+  request(paste0(base_url, path)) |>
+    req_url_query(api_key = api_key) |>
+    req_perform() |>
+    resp_body_json()
+}
+id <- api_top10$packageId[1]
+gid <- api_top10$granuleId[1]
+package <- get_summary(paste0("/packages/", id, "/summary"))
+granule <- get_summary(paste0("/packages/", id, "/granules/", gid, "/summary"))
+names(package$download)
+names(granule$download)
+```
+
+## 3. Download and comparison
+
+Following the bulk-download approach in `govtdata01.R`, the ten PDFs were downloaded from the website export and independently from the API granule links. Requests were made sequentially with a randomized one-to-three-second interval for uncached PDF downloads. Files were stored in separate, Git-ignored folders under `data/assignment05/`. Valid cached files were reused on subsequent runs. Each download was checked using `pdftools::pdf_info()`, file size and an MD5 checksum.
+
+| Validation | Result |
+|:---|---:|
+| Website search / API search result count | 1,211 / 1,211 |
+| Selected documents per method | 10 |
+| Successful downloads per method | 10 |
+| Matching package IDs | 10/10 |
+| Matching rank order | 10/10 |
+| Matching file sizes and page counts | 10/10 |
+| Matching MD5 checksums | 10/10 |
+| Total size per set | 39,237,287 bytes |
+| Total pages per set | 444 |
+
+The two searches returned exactly the same ten package IDs in the same order. Each pair of PDFs also had the same file size, page count and MD5 checksum, providing strong evidence that the downloads were byte-identical. No discrepancies were observed for the selected documents.
+
+```{r}
+#| eval: false
+# Comparisons after the two independent download loops.
+setequal(manual_top10$packageId, api_top10$packageId)
+identical(manual_top10$packageId, api_top10$packageId)
+# Compare the cached file checksums by package ID.
+```
+
+### Download log
+
+The log below is generated from the saved combined download log, not from a new API request. The download time records the original retrieval where available; the check time records validation of the file. The manual files were reused from cache during the final run, while the API files were newly downloaded. A missing original download time is left missing rather than reconstructed.
+
+```{r}
+#| echo: false
+library(dplyr)
+log <- readr::read_csv("data/assignment05/download_log.csv", show_col_types = FALSE)
+stopifnot(nrow(log) == 20L, all(log$status == "Success"))
+knitr::kable(log |> transmute(Method = method, `Package ID` = packageId,
+  Status = status, Bytes = bytes, Pages = pages, Cached = from_cache,
+  `Downloaded (CST)` = downloaded_at, `Checked (CST)` = checked_at),
+  format = "html", escape = TRUE, caption = "Download and validation log (20 files).")
+```
+
+::: {.callout-note collapse="true" title="MD5 checksum verification"}
+```{r}
+#| echo: false
+checks <- readr::read_csv("data/assignment05/pdf_comparison.csv", show_col_types = FALSE)
+stopifnot(nrow(checks) == 10L, all(checks$identical_md5))
+knitr::kable(checks |> transmute(`Package ID` = packageId,
+  `MD5 checksum (both copies)` = manual_md5,
+  `Matching MD5` = identical_md5), format = "html", escape = TRUE)
+```
 :::
+
+## 4. Document usability and methodological reflection
+
+### 4.1. PDF text extraction
+
+All ten documents could be processed using `pdftools::pdf_text()`. Text was extracted from 434 of 444 pages (97.75%). Ten pages yielded no text, and 85 pages (19.14%, including the ten empty-text pages) contained fewer than 100 characters after whitespace normalization. The total approximate whitespace-delimited token count was 184,135. These counts describe extraction coverage, not transcription accuracy or substantive word counts.
+
+| Package ID | Pages | Pages with text | Empty-text pages | Low-text pages (<100 chars) | Approx. tokens |
+|:---|---:|---:|---:|---:|---:|
+| CHRG-119shrg64579 | 38 | 37 | 1 | 9 | 14,830 |
+| CHRG-119shrg63909 | 38 | 37 | 1 | 1 | 19,457 |
+| CHRG-119shrg63707 | 42 | 41 | 1 | 15 | 12,583 |
+| CHRG-119shrg64059 | 31 | 30 | 1 | 1 | 14,684 |
+| CHRG-119shrg63168 | 31 | 30 | 1 | 1 | 15,114 |
+| CHRG-119shrg62398 | 63 | 62 | 1 | 30 | 14,461 |
+| CHRG-119shrg62961 | 36 | 35 | 1 | 1 | 19,178 |
+| CHRG-119shrg61656 | 58 | 57 | 1 | 13 | 25,522 |
+| CHRG-119shrg61565 | 53 | 52 | 1 | 1 | 28,511 |
+| CHRG-119shrg60820 | 54 | 53 | 1 | 13 | 19,795 |
+| **Total** | **444** | **434** | **10** | **85** | **184,135** |
+
+```{r}
+#| eval: false
+library(pdftools)
+library(stringr)
+path <- file.path("data/assignment05/api_pdfs", paste0(id, ".pdf"))
+pages <- pdf_text(path)
+chars <- nchar(str_squish(pages))
+c(total_pages = length(pages), text_pages = sum(chars > 0),
+  empty_pages = sum(chars == 0), low_text_pages = sum(chars < 100),
+  approximate_tokens = sum(str_count(pages, "\\S+")))
+```
+
+Poppler reported ligature-parsing diagnostics while extracting text, although all ten extractions completed. These warnings indicate possible character-encoding problems and should not be ignored when assessing text quality. Low-text pages may include blank pages, figures, tables or scanned material; the extraction counts alone cannot distinguish these categories. The PDFs are usable as a starting point for a corpus, but a reliable analysis would require checking reading order, removing repeated headers and page numbers, separating testimony from questions and appendices, and identifying speakers. OCR should be considered only for pages verified to contain relevant text that is not otherwise extractable. A structured table could use one row per hearing or per speaker turn, with the package ID as a stable linking key.
+
+### 4.2. Improvements
+
+For document-level variables such as title, date, committee and identifiers, the API metadata is preferable to parsing PDF cover pages. All ten granule summaries advertised text downloads (`txtLink`), and all ten website-export records included HTML links. These alternatives should be tested before additional PDF parsing or OCR; their text quality was not assessed in this run. MODS metadata can provide further structured bibliographic information, PREMIS describes preservation information, and ZIP packages support archival acquisition. A scalable workflow would cache raw responses, retain query and retrieval timestamps, paginate using the returned cursor, log failures and validate unique identifiers and checksums. It would also distinguish hearing dates from modification dates and inspect changes to existing records.
+
+### 4.3. API versus manual search and web scraping (two sentences)
+
+The API provided a reproducible structured query, cursor-based pagination, stable identifiers, and package- and granule-level metadata without relying on the website's manual export limit. Unlike last week's HTML scraping, API-based collection did not depend on visual page structure or CSS selectors, although nested JSON fields and the distinction between packages and granules still required explicit handling.
+
+::::

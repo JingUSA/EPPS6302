@@ -24,6 +24,41 @@ ul.task-list li input[type="checkbox"] {
   vertical-align: middle;
 }
 .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -138,9 +173,750 @@ document.addEventListener('DOMContentLoaded', function () {
 </header>
 
 
-<section id="assignment-5-government-data-api" class="assignment-report">
+<style>
+/* Assignment 5 only: preserve the shared course-site layout. */
+.assignment-report.assignment05-report {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+.assignment05-report table {
+  display: table !important;
+  width: 100% !important;
+  max-width: 100%;
+  table-layout: auto !important;
+  border-collapse: collapse;
+  margin: 14px 0 24px;
+  font-size: 0.88em;
+  line-height: 1.5;
+}
+.assignment05-report table colgroup { display: table-column-group !important; }
+.assignment05-report table col { display: table-column !important; width: auto !important; }
+.assignment05-report table thead { display: table-header-group !important; }
+.assignment05-report table tbody { display: table-row-group !important; }
+.assignment05-report table tfoot { display: table-footer-group !important; }
+.assignment05-report table tr { display: table-row !important; width: auto !important; }
+.assignment05-report table th,
+.assignment05-report table td {
+  display: table-cell !important;
+  width: auto !important;
+  min-width: 0;
+  padding: 9px 12px !important;
+  vertical-align: top;
+  white-space: normal;
+  overflow-wrap: normal;
+  border-bottom: 1px solid #dedede;
+}
+.assignment05-report table th {
+  font-weight: 600;
+  border-top: 1px solid #999;
+  border-bottom: 1px solid #999;
+  background: #f7f7f7;
+}
+.assignment05-report table caption {
+  caption-side: top;
+  text-align: left;
+  font-weight: 500;
+  padding: 0 0 8px;
+}
+.assignment05-report .cell-output-display,
+.assignment05-report .quarto-table-container,
+.assignment05-report .table-responsive {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.assignment05-report pre { max-width: 100%; overflow-x: auto; }
+.assignment05-report details { margin: 12px 0 18px; }
+.assignment05-report img { max-width: 100%; height: auto; }
+@media (max-width: 780px) {
+  .assignment05-report table { font-size: 0.8em; }
+  .assignment05-report table th,
+  .assignment05-report table td { padding: 7px 8px !important; }
+}
+</style>
+<section id="assignment-5-government-data-api" class="assignment-report assignment05-report">
 <h1>Assignment 5: Government Data API</h1>
-<p>This assignment has not yet been completed.</p>
+<p><strong>Collecting U.S. Senate Foreign Relations Committee Hearings</strong><br>
+EPPS 6302 — Methods of Data Collection and Production | Fall 2026</p>
+<h2 id="api-registration-and-authentication" class="anchored">0. API registration and authentication</h2>
+<p>A GovInfo API key was obtained through <a href="https://www.govinfo.gov/api-signup">GovInfo API registration</a> and stored locally in <code>.Renviron</code> as <code>GOVINFO_API_KEY</code>. The authenticated <code>/collections</code> request returned HTTP 200 on November 26, 2026 (CST). The key, original PDFs and raw API responses are excluded from the public website. The examples below are illustrative acquisition code and are not executed during rendering.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show R code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(httr2)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>api_key <span class="ot">&lt;-</span> <span class="fu">Sys.getenv</span>(<span class="st">"GOVINFO_API_KEY"</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">nzchar</span>(api_key))</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>base_url <span class="ot">&lt;-</span> <span class="st">"https://api.govinfo.gov"</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>collections <span class="ot">&lt;-</span> <span class="fu">request</span>(<span class="fu">paste0</span>(base_url, <span class="st">"/collections"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">req_url_query</span>(<span class="at">api_key =</span> api_key) <span class="sc">|&gt;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">req_perform</span>()</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">resp_status</span>(collections)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<h2 id="manual-search-and-export" class="anchored">1. Manual search and export</h2>
+<p>The <a href="https://www.govinfo.gov/app/search/">GovInfo search interface</a> was searched on November 26, 2026, using the following query and the <strong>Date New to Old</strong> sort order:</p>
+<pre class="text"><code>collection:CHRG AND chamber:senate AND committee:"Foreign Relations"</code></pre>
+<p>The search reported 1,211 results. The JSON export contained 1,000 records and 999 distinct package IDs. The first ten distinct package IDs, in the exported order, were selected. The search includes hearings of the committee and its subcommittees. Recency is defined by the GovInfo <code>publishdate</code> sort field, not the date a document was added to the API or its last modification date.</p>
+<table class="caption-top">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">Rank</th>
+<th style="text-align: left;">GovInfo date</th>
+<th style="text-align: left;">Hearing title</th>
+<th style="text-align: left;">Package ID</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">2026-04-30</td>
+<td style="text-align: left;">Sabotage in the Baltic Sea, Implications for European Security, and Lessons for the Indo-Pacific</td>
+<td style="text-align: left;">CHRG-119shrg64579</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">2026-03-24</td>
+<td style="text-align: left;">Arms Control and Transforming International Security Functions at the State Department</td>
+<td style="text-align: left;">CHRG-119shrg63909</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">3</td>
+<td style="text-align: left;">2026-02-04</td>
+<td style="text-align: left;">A Pathway to European Energy Security</td>
+<td style="text-align: left;">CHRG-119shrg63707</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">4</td>
+<td style="text-align: left;">2026-02-03</td>
+<td style="text-align: left;">Countering Terrorism in North Africa: Opportunities and Challenges</td>
+<td style="text-align: left;">CHRG-119shrg64059</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">5</td>
+<td style="text-align: left;">2025-12-10</td>
+<td style="text-align: left;">Maritime Security in Africa: Assessing Threats to Commercial Diplomacy and National Security Interests</td>
+<td style="text-align: left;">CHRG-119shrg63168</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">6</td>
+<td style="text-align: left;">2025-10-07</td>
+<td style="text-align: left;">Combating the People’s Republic of China’s Illegal, Coercive, Aggressive, and Deceptive Behavior in the Indo-Pacific</td>
+<td style="text-align: left;">CHRG-119shrg62398</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">7</td>
+<td style="text-align: left;">2025-09-30</td>
+<td style="text-align: left;">The Future of U.S. Black Sea Strategy</td>
+<td style="text-align: left;">CHRG-119shrg62961</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">8</td>
+<td style="text-align: left;">2025-07-22</td>
+<td style="text-align: left;">The Status of Democracy and Human Rights in Hong Kong, Five Years After the PRC’s Judicial Takeover</td>
+<td style="text-align: left;">CHRG-119shrg61656</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">9</td>
+<td style="text-align: left;">2025-06-18</td>
+<td style="text-align: left;">NATO Summit 2025: An Assessment of Transatlantic Security Cooperation</td>
+<td style="text-align: left;">CHRG-119shrg61565</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">2025-05-13</td>
+<td style="text-align: left;">East Africa &amp; the Horn: At a Turning Point or Breaking Point?</td>
+<td style="text-align: left;">CHRG-119shrg60820</td>
+</tr>
+</tbody>
+</table>
+<div class="cell">
+<details class="code-fold">
+<summary>Show R code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(jsonlite)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>manual_raw <span class="ot">&lt;-</span> <span class="fu">read_json</span>(<span class="st">"data/assignment05/manual_search.json"</span>)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>manual_top10 <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(manual_raw<span class="sc">$</span>resultSet) <span class="sc">|&gt;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">index =</span> <span class="fu">as.integer</span>(index)) <span class="sc">|&gt;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(index) <span class="sc">|&gt;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>(packageId, <span class="at">.keep_all =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_head</span>(<span class="at">n =</span> <span class="dv">10</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<h2 id="govinfo-api-collections-search-packages-and-pagination" class="anchored">2. GovInfo API: collections, search, packages and pagination</h2>
+<p>The <a href="https://api.govinfo.gov/docs">GovInfo API documentation</a> was used to construct requests. The Congressional Hearings collection endpoint <code>/collections/CHRG/2026-01-01T00:00:00Z</code> returned HTTP 200. The Search API used the identical query and descending <code>publishdate</code> order, with 100 records per page. Passing the first response’s <code>offsetMark</code> into the next request retrieved a second page of 100 records; the two pages had no overlapping package IDs. Only two pages were tested because the assignment required ten documents, not an exhaustive collection.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show R code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>body <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">query =</span> manual_raw<span class="sc">$</span>searchTerms,</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">pageSize =</span> <span class="dv">100</span>,</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">offsetMark =</span> <span class="st">"*"</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">sorts =</span> <span class="fu">list</span>(<span class="fu">list</span>(<span class="at">field =</span> <span class="st">"publishdate"</span>, <span class="at">sortOrder =</span> <span class="st">"DESC"</span>))</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>search_api <span class="ot">&lt;-</span> <span class="cf">function</span>(body) {</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">request</span>(<span class="fu">paste0</span>(base_url, <span class="st">"/search"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">req_url_query</span>(<span class="at">api_key =</span> api_key) <span class="sc">|&gt;</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">req_body_json</span>(body) <span class="sc">|&gt;</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">req_perform</span>() <span class="sc">|&gt;</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">resp_body_json</span>()</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>found <span class="ot">&lt;-</span> <span class="fu">search_api</span>(body)</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>body<span class="sc">$</span>offsetMark <span class="ot">&lt;-</span> found<span class="sc">$</span>offsetMark</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>page2 <span class="ot">&lt;-</span> <span class="fu">search_api</span>(body)</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract scalar fields rather than coercing unequal-length nested arrays.</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>scalar <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">is.null</span>(x) <span class="sc">||</span> <span class="fu">length</span>(x) <span class="sc">==</span> <span class="dv">0</span>L) <span class="fu">return</span>(<span class="cn">NA_character_</span>)</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.character</span>(x[[<span class="dv">1</span>]])</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>api_top10 <span class="ot">&lt;-</span> purrr<span class="sc">::</span><span class="fu">map_dfr</span>(found<span class="sc">$</span>results, <span class="cf">function</span>(x) {</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(<span class="at">packageId =</span> <span class="fu">scalar</span>(x<span class="sc">$</span>packageId),</span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>         <span class="at">granuleId =</span> <span class="fu">scalar</span>(x<span class="sc">$</span>granuleId),</span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>         <span class="at">title =</span> <span class="fu">scalar</span>(x<span class="sc">$</span>title),</span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>         <span class="at">dateIssued =</span> <span class="fu">scalar</span>(x<span class="sc">$</span>dateIssued))</span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>}) <span class="sc">|&gt;</span> <span class="fu">distinct</span>(packageId, <span class="at">.keep_all =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span> <span class="fu">slice_head</span>(<span class="at">n =</span> <span class="dv">10</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<table class="caption-top">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Endpoint or check</th>
+<th style="text-align: left;">Result</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><code>/collections</code></td>
+<td style="text-align: left;">HTTP 200</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">CHRG collection endpoint</td>
+<td style="text-align: left;">HTTP 200</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Search result count</td>
+<td style="text-align: left;">1,211</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Page 1 / Page 2</td>
+<td style="text-align: left;">100 / 100 records</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Package IDs shared across the first two pages</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Package summaries / Granule summaries</td>
+<td style="text-align: left;">10 / 10 successful responses</td>
+</tr>
+</tbody>
+</table>
+<p>Two problems occurred during implementation. First, direct row-binding of the Search API response failed because nested <code>governmentAuthor</code> and <code>download</code> fields had unequal lengths. Extracting the scalar fields record by record resolved the problem. Second, the package summaries contained PREMIS, ZIP and MODS links but no PDF links. The corresponding granule summaries contained <code>pdfLink</code> and <code>txtLink</code> for all ten hearings, in addition to PREMIS, ZIP and MODS links. For these documents, the granule ID equaled the package ID.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show R code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>get_summary <span class="ot">&lt;-</span> <span class="cf">function</span>(path) {</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">request</span>(<span class="fu">paste0</span>(base_url, path)) <span class="sc">|&gt;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">req_url_query</span>(<span class="at">api_key =</span> api_key) <span class="sc">|&gt;</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">req_perform</span>() <span class="sc">|&gt;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">resp_body_json</span>()</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>id <span class="ot">&lt;-</span> api_top10<span class="sc">$</span>packageId[<span class="dv">1</span>]</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>gid <span class="ot">&lt;-</span> api_top10<span class="sc">$</span>granuleId[<span class="dv">1</span>]</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>package <span class="ot">&lt;-</span> <span class="fu">get_summary</span>(<span class="fu">paste0</span>(<span class="st">"/packages/"</span>, id, <span class="st">"/summary"</span>))</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>granule <span class="ot">&lt;-</span> <span class="fu">get_summary</span>(<span class="fu">paste0</span>(<span class="st">"/packages/"</span>, id, <span class="st">"/granules/"</span>, gid, <span class="st">"/summary"</span>))</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(package<span class="sc">$</span>download)</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(granule<span class="sc">$</span>download)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<h2 id="download-and-comparison" class="anchored">3. Download and comparison</h2>
+<p>Following the bulk-download approach in <code>govtdata01.R</code>, the ten PDFs were downloaded from the website export and independently from the API granule links. Requests were made sequentially with a randomized one-to-three-second interval for uncached PDF downloads. Files were stored in separate, Git-ignored folders under <code>data/assignment05/</code>. Valid cached files were reused on subsequent runs. Each download was checked using <code>pdftools::pdf_info()</code>, file size and an MD5 checksum.</p>
+<table class="caption-top">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Validation</th>
+<th style="text-align: right;">Result</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Website search / API search result count</td>
+<td style="text-align: right;">1,211 / 1,211</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Selected documents per method</td>
+<td style="text-align: right;">10</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Successful downloads per method</td>
+<td style="text-align: right;">10</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Matching package IDs</td>
+<td style="text-align: right;">10/10</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Matching rank order</td>
+<td style="text-align: right;">10/10</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Matching file sizes and page counts</td>
+<td style="text-align: right;">10/10</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Matching MD5 checksums</td>
+<td style="text-align: right;">10/10</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Total size per set</td>
+<td style="text-align: right;">39,237,287 bytes</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Total pages per set</td>
+<td style="text-align: right;">444</td>
+</tr>
+</tbody>
+</table>
+<p>The two searches returned exactly the same ten package IDs in the same order. Each pair of PDFs also had the same file size, page count and MD5 checksum, providing strong evidence that the downloads were byte-identical. No discrepancies were observed for the selected documents.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show R code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Comparisons after the two independent download loops.</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">setequal</span>(manual_top10<span class="sc">$</span>packageId, api_top10<span class="sc">$</span>packageId)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="fu">identical</span>(manual_top10<span class="sc">$</span>packageId, api_top10<span class="sc">$</span>packageId)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Compare the cached file checksums by package ID.</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<h3 id="download-log" class="anchored">Download log</h3>
+<p>The log below is generated from the saved combined download log, not from a new API request. The download time records the original retrieval where available; the check time records validation of the file. The manual files were reused from cache during the final run, while the API files were newly downloaded. A missing original download time is left missing rather than reconstructed.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top">
+<caption>Download and validation log (20 files).</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">Method</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Package ID</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Status</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Bytes</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Pages</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Cached</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Downloaded (CST)</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Checked (CST)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">manual</td>
+<td style="text-align: left;">CHRG-119shrg64579</td>
+<td style="text-align: left;">Success</td>
+<td style="text-align: right;">3927775</td>
+<td style="text-align: right;">38</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">2026-11-26 17:38:00 CST</td>
+<td style="text-align: left;">2026-11-26 17:43:02 CST</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">manual</td>
+<td style="text-align: left;">CHRG-119shrg63909</td>
+<td style="text-align: left;">Success</td>
+<td style="text-align: right;">351262</td>
+<td style="text-align: right;">38</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">2026-11-26 17:38:02 CST</td>
+<td style="text-align: left;">2026-11-26 17:43:02 CST</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">manual</td>
+<td style="text-align: left;">CHRG-119shrg63707</td>
+<td style="text-align: left;">Success</td>
+<td style="text-align: right;">9278868</td>
+<td style="text-align: right;">42</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">2026-11-26 17:38:09 CST</td>
+<td style="text-align: left;">2026-11-26 17:43:02 CST</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">manual</td>
+<td style="text-align: left;">CHRG-119shrg64059</td>
+<td style="text-align: left;">Success</td>
+<td style="text-align: right;">312909</td>
+<td style="text-align: right;">31</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">2026-11-26 17:38:11 CST</td>
+<td style="text-align: left;">2026-11-26 17:43:02 CST</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">manual</td>
+<td style="text-align: left;">CHRG-119shrg63168</td>
+<td style="text-align: left;">Success</td>
+<td style="text-align: right;">314468</td>
+<td style="text-align: right;">31</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">2026-11-26 17:38:13 CST</td>
+<td style="text-align: left;">2026-11-26 17:43:02 CST</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">manual</td>
+<td style="text-align: left;">CHRG-119shrg62398</td>
+<td style="text-align: left;">Success</td>
+<td style="text-align: right;">8175454</td>
+<td style="text-align: right;">63</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">2026-11-26 17:38:19 CST</td>
+<td style="text-align: left;">2026-11-26 17:43:02 CST</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">manual</td>
+<td style="text-align: left;">CHRG-119shrg62961</td>
+<td style="text-align: left;">Success</td>
+<td style="text-align: right;">350926</td>
+<td style="text-align: right;">36</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">2026-11-26 17:38:22 CST</td>
+<td style="text-align: left;">2026-11-26 17:43:02 CST</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">manual</td>
+<td style="text-align: left;">CHRG-119shrg61656</td>
+<td style="text-align: left;">Success</td>
+<td style="text-align: right;">12130717</td>
+<td style="text-align: right;">58</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">2026-11-26 17:38:29 CST</td>
+<td style="text-align: left;">2026-11-26 17:43:02 CST</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">manual</td>
+<td style="text-align: left;">CHRG-119shrg61565</td>
+<td style="text-align: left;">Success</td>
+<td style="text-align: right;">440045</td>
+<td style="text-align: right;">53</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">2026-11-26 17:38:31 CST</td>
+<td style="text-align: left;">2026-11-26 17:43:02 CST</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">manual</td>
+<td style="text-align: left;">CHRG-119shrg60820</td>
+<td style="text-align: left;">Success</td>
+<td style="text-align: right;">3954863</td>
+<td style="text-align: right;">54</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">2026-11-26 17:38:34 CST</td>
+<td style="text-align: left;">2026-11-26 17:43:02 CST</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">api</td>
+<td style="text-align: left;">CHRG-119shrg64579</td>
+<td style="text-align: left;">Success</td>
+<td style="text-align: right;">3927775</td>
+<td style="text-align: right;">38</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">2026-11-26 17:43:22 CST</td>
+<td style="text-align: left;">2026-11-26 17:43:22 CST</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">api</td>
+<td style="text-align: left;">CHRG-119shrg63909</td>
+<td style="text-align: left;">Success</td>
+<td style="text-align: right;">351262</td>
+<td style="text-align: right;">38</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">2026-11-26 17:43:24 CST</td>
+<td style="text-align: left;">2026-11-26 17:43:24 CST</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">api</td>
+<td style="text-align: left;">CHRG-119shrg63707</td>
+<td style="text-align: left;">Success</td>
+<td style="text-align: right;">9278868</td>
+<td style="text-align: right;">42</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">2026-11-26 17:43:36 CST</td>
+<td style="text-align: left;">2026-11-26 17:43:36 CST</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">api</td>
+<td style="text-align: left;">CHRG-119shrg64059</td>
+<td style="text-align: left;">Success</td>
+<td style="text-align: right;">312909</td>
+<td style="text-align: right;">31</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">2026-11-26 17:43:39 CST</td>
+<td style="text-align: left;">2026-11-26 17:43:39 CST</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">api</td>
+<td style="text-align: left;">CHRG-119shrg63168</td>
+<td style="text-align: left;">Success</td>
+<td style="text-align: right;">314468</td>
+<td style="text-align: right;">31</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">2026-11-26 17:43:42 CST</td>
+<td style="text-align: left;">2026-11-26 17:43:42 CST</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">api</td>
+<td style="text-align: left;">CHRG-119shrg62398</td>
+<td style="text-align: left;">Success</td>
+<td style="text-align: right;">8175454</td>
+<td style="text-align: right;">63</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">2026-11-26 17:43:53 CST</td>
+<td style="text-align: left;">2026-11-26 17:43:53 CST</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">api</td>
+<td style="text-align: left;">CHRG-119shrg62961</td>
+<td style="text-align: left;">Success</td>
+<td style="text-align: right;">350926</td>
+<td style="text-align: right;">36</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">2026-11-26 17:43:54 CST</td>
+<td style="text-align: left;">2026-11-26 17:43:54 CST</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">api</td>
+<td style="text-align: left;">CHRG-119shrg61656</td>
+<td style="text-align: left;">Success</td>
+<td style="text-align: right;">12130717</td>
+<td style="text-align: right;">58</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">2026-11-26 17:44:10 CST</td>
+<td style="text-align: left;">2026-11-26 17:44:10 CST</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">api</td>
+<td style="text-align: left;">CHRG-119shrg61565</td>
+<td style="text-align: left;">Success</td>
+<td style="text-align: right;">440045</td>
+<td style="text-align: right;">53</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">2026-11-26 17:44:12 CST</td>
+<td style="text-align: left;">2026-11-26 17:44:12 CST</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">api</td>
+<td style="text-align: left;">CHRG-119shrg60820</td>
+<td style="text-align: left;">Success</td>
+<td style="text-align: right;">3954863</td>
+<td style="text-align: right;">54</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">2026-11-26 17:44:19 CST</td>
+<td style="text-align: left;">2026-11-26 17:44:19 CST</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div>
+<blockquote>
+<p><strong>MD5 checksum verification</strong></p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">Package ID</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">MD5 checksum (both copies)</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Matching MD5</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">CHRG-119shrg64579</td>
+<td style="text-align: left;">300efdbbfd8375c8a53f562bdc949444</td>
+<td style="text-align: left;">TRUE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">CHRG-119shrg63909</td>
+<td style="text-align: left;">cbe11696f883c13145af12ad0d2dd9cd</td>
+<td style="text-align: left;">TRUE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">CHRG-119shrg63707</td>
+<td style="text-align: left;">905ce36c85e974d13ae0bf3cab7539c5</td>
+<td style="text-align: left;">TRUE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">CHRG-119shrg64059</td>
+<td style="text-align: left;">480b52f0e41d0b2cd9a8c2119e9c5d56</td>
+<td style="text-align: left;">TRUE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">CHRG-119shrg63168</td>
+<td style="text-align: left;">8719a949c1c124d6090956bebd143325</td>
+<td style="text-align: left;">TRUE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">CHRG-119shrg62398</td>
+<td style="text-align: left;">9659f2ebf9d3057eef3955477f59262f</td>
+<td style="text-align: left;">TRUE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">CHRG-119shrg62961</td>
+<td style="text-align: left;">d46963b56dbb16751bb5b9e8d672b219</td>
+<td style="text-align: left;">TRUE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">CHRG-119shrg61656</td>
+<td style="text-align: left;">376a896fb63bc044442cec1977b6461c</td>
+<td style="text-align: left;">TRUE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">CHRG-119shrg61565</td>
+<td style="text-align: left;">e9e6458bc6f4990d04c6d2a644904436</td>
+<td style="text-align: left;">TRUE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">CHRG-119shrg60820</td>
+<td style="text-align: left;">355096873dc9ab04784ff121ed85f3c8</td>
+<td style="text-align: left;">TRUE</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</blockquote>
+</div>
+<h2 id="document-usability-and-methodological-reflection" class="anchored">4. Document usability and methodological reflection</h2>
+<h3 id="pdf-text-extraction" class="anchored">4.1. PDF text extraction</h3>
+<p>All ten documents could be processed using <code>pdftools::pdf_text()</code>. Text was extracted from 434 of 444 pages (97.75%). Ten pages yielded no text, and 85 pages (19.14%, including the ten empty-text pages) contained fewer than 100 characters after whitespace normalization. The total approximate whitespace-delimited token count was 184,135. These counts describe extraction coverage, not transcription accuracy or substantive word counts.</p>
+<table class="caption-top" style="width:100%;">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Package ID</th>
+<th style="text-align: right;">Pages</th>
+<th style="text-align: right;">Pages with text</th>
+<th style="text-align: right;">Empty-text pages</th>
+<th style="text-align: right;">Low-text pages (&lt;100 chars)</th>
+<th style="text-align: right;">Approx. tokens</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">CHRG-119shrg64579</td>
+<td style="text-align: right;">38</td>
+<td style="text-align: right;">37</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">14,830</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">CHRG-119shrg63909</td>
+<td style="text-align: right;">38</td>
+<td style="text-align: right;">37</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">19,457</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">CHRG-119shrg63707</td>
+<td style="text-align: right;">42</td>
+<td style="text-align: right;">41</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">12,583</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">CHRG-119shrg64059</td>
+<td style="text-align: right;">31</td>
+<td style="text-align: right;">30</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">14,684</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">CHRG-119shrg63168</td>
+<td style="text-align: right;">31</td>
+<td style="text-align: right;">30</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">15,114</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">CHRG-119shrg62398</td>
+<td style="text-align: right;">63</td>
+<td style="text-align: right;">62</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">30</td>
+<td style="text-align: right;">14,461</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">CHRG-119shrg62961</td>
+<td style="text-align: right;">36</td>
+<td style="text-align: right;">35</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">19,178</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">CHRG-119shrg61656</td>
+<td style="text-align: right;">58</td>
+<td style="text-align: right;">57</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">13</td>
+<td style="text-align: right;">25,522</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">CHRG-119shrg61565</td>
+<td style="text-align: right;">53</td>
+<td style="text-align: right;">52</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">28,511</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">CHRG-119shrg60820</td>
+<td style="text-align: right;">54</td>
+<td style="text-align: right;">53</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">13</td>
+<td style="text-align: right;">19,795</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Total</strong></td>
+<td style="text-align: right;"><strong>444</strong></td>
+<td style="text-align: right;"><strong>434</strong></td>
+<td style="text-align: right;"><strong>10</strong></td>
+<td style="text-align: right;"><strong>85</strong></td>
+<td style="text-align: right;"><strong>184,135</strong></td>
+</tr>
+</tbody>
+</table>
+<div class="cell">
+<details class="code-fold">
+<summary>Show R code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(pdftools)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(stringr)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>path <span class="ot">&lt;-</span> <span class="fu">file.path</span>(<span class="st">"data/assignment05/api_pdfs"</span>, <span class="fu">paste0</span>(id, <span class="st">".pdf"</span>))</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>pages <span class="ot">&lt;-</span> <span class="fu">pdf_text</span>(path)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>chars <span class="ot">&lt;-</span> <span class="fu">nchar</span>(<span class="fu">str_squish</span>(pages))</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="fu">c</span>(<span class="at">total_pages =</span> <span class="fu">length</span>(pages), <span class="at">text_pages =</span> <span class="fu">sum</span>(chars <span class="sc">&gt;</span> <span class="dv">0</span>),</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">empty_pages =</span> <span class="fu">sum</span>(chars <span class="sc">==</span> <span class="dv">0</span>), <span class="at">low_text_pages =</span> <span class="fu">sum</span>(chars <span class="sc">&lt;</span> <span class="dv">100</span>),</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">approximate_tokens =</span> <span class="fu">sum</span>(<span class="fu">str_count</span>(pages, <span class="st">"</span><span class="sc">\\</span><span class="st">S+"</span>)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<p>Poppler reported ligature-parsing diagnostics while extracting text, although all ten extractions completed. These warnings indicate possible character-encoding problems and should not be ignored when assessing text quality. Low-text pages may include blank pages, figures, tables or scanned material; the extraction counts alone cannot distinguish these categories. The PDFs are usable as a starting point for a corpus, but a reliable analysis would require checking reading order, removing repeated headers and page numbers, separating testimony from questions and appendices, and identifying speakers. OCR should be considered only for pages verified to contain relevant text that is not otherwise extractable. A structured table could use one row per hearing or per speaker turn, with the package ID as a stable linking key.</p>
+<h3 id="improvements" class="anchored">4.2. Improvements</h3>
+<p>For document-level variables such as title, date, committee and identifiers, the API metadata is preferable to parsing PDF cover pages. All ten granule summaries advertised text downloads (<code>txtLink</code>), and all ten website-export records included HTML links. These alternatives should be tested before additional PDF parsing or OCR; their text quality was not assessed in this run. MODS metadata can provide further structured bibliographic information, PREMIS describes preservation information, and ZIP packages support archival acquisition. A scalable workflow would cache raw responses, retain query and retrieval timestamps, paginate using the returned cursor, log failures and validate unique identifiers and checksums. It would also distinguish hearing dates from modification dates and inspect changes to existing records.</p>
+<h3 id="api-versus-manual-search-and-web-scraping-two-sentences" class="anchored">4.3. API versus manual search and web scraping (two sentences)</h3>
+<p>The API provided a reproducible structured query, cursor-based pagination, stable identifiers, and package- and granule-level metadata without relying on the website’s manual export limit. Unlike last week’s HTML scraping, API-based collection did not depend on visual page structure or CSS selectors, although nested JSON fields and the distinction between packages and granules still required explicit handling.</p>
 </section>
 
 
