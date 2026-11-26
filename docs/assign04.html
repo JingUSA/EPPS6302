@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Assignment 4: Web Scraping – EPPS 6302: Methods of Data Collection and Production</title>
+<title>Assignment 4: Webscraping 1 – EPPS 6302: Methods of Data Collection and Production</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -24,6 +24,41 @@ ul.task-list li input[type="checkbox"] {
   vertical-align: middle;
 }
 .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -133,15 +168,3233 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 <header id="title-block-header">
-<h1 class="title">Assignment 4: Web Scraping</h1>
+<h1 class="title">Assignment 4: Webscraping 1</h1>
 
 </header>
 
 
-<section id="assignment-4-web-scraping" class="assignment-report">
-<h1>Assignment 4: Web Scraping</h1>
-<p>This assignment has not yet been completed.</p>
-</section>
+<p><strong>Web Scraping and API-Based Data Collection</strong><br>
+EPPS 6302 — Methods of Data Collection and Production | Fall 2026</p>
+<h2 id="permission-and-provenance" class="anchored">0. Permission and provenance</h2>
+<p>Before fetching the target pages, <code>robotstxt::paths_allowed()</code> was run on November 26, 2026 (CST). All six initial paths (five sandbox pages and the reserves page) returned <code>TRUE</code> at 17:15:21. The Books to Scrape checks also generated missing-file, content-type and suspect-content warnings; thus the result is not evidence of a successfully retrieved robots file. The <a href="https://books.toscrape.com/">sandbox</a> explicitly exists for scraping practice. The two Wikipedia target paths returned <code>TRUE</code>; an identifiable user agent was supplied for the page downloads. Robots directives do not substitute for terms of use or permission to redistribute content.</p>
+<table class="caption-top">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Source</th>
+<th style="text-align: left;">Retrieval time (CST)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Books to Scrape, pages 1–5</td>
+<td style="text-align: left;">November 26, 2026, 17:16:39–17:16:48</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Wikipedia, foreign-exchange reserves</td>
+<td style="text-align: left;">November 26, 2026, 17:18:00</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Wikipedia, internet usage</td>
+<td style="text-align: left;">November 26, 2026, 17:19:26</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">World Bank WDI</td>
+<td style="text-align: left;">November 26, 2026, 17:19:48</td>
+</tr>
+</tbody>
+</table>
+<p>Later permission checks were also archived. HTML and API responses are cached locally; rendering this page does not fetch any remote data.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show R code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(robotstxt)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>book_urls <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"https://books.toscrape.com/catalogue/page-"</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, <span class="st">".html"</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>wiki_url <span class="ot">&lt;-</span> <span class="st">"https://en.wikipedia.org/wiki/List_of_countries_by_foreign-exchange_reserves"</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>internet_url <span class="ot">&lt;-</span> <span class="st">"https://en.wikipedia.org/wiki/List_of_countries_by_number_of_internet_users"</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">paths_allowed</span>(<span class="fu">c</span>(book_urls, wiki_url))</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Provide a real contact address locally; do not publish it in the script.</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>wiki_agent <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"EPPS6302Research/1.0 ("</span>, <span class="fu">readline</span>(<span class="st">"Contact email: "</span>), <span class="st">")"</span>)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">paths_allowed</span>(wiki_url, <span class="at">bot =</span> <span class="st">"EPPS6302Research"</span>, <span class="at">user_agent =</span> wiki_agent)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="fu">paths_allowed</span>(internet_url, <span class="at">bot =</span> <span class="st">"EPPS6302Research"</span>, <span class="at">user_agent =</span> wiki_agent)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co"># After checking permission, cache each successful response once.</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>cache_html <span class="ot">&lt;-</span> <span class="cf">function</span>(url, path, agent, time_path) {</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">file.exists</span>(path)) {</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">Sys.sleep</span>(<span class="dv">2</span>)</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    response <span class="ot">&lt;-</span> httr<span class="sc">::</span><span class="fu">GET</span>(url, httr<span class="sc">::</span><span class="fu">user_agent</span>(agent), httr<span class="sc">::</span><span class="fu">timeout</span>(<span class="dv">60</span>))</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    httr<span class="sc">::</span><span class="fu">stop_for_status</span>(response)</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    <span class="fu">writeBin</span>(httr<span class="sc">::</span><span class="fu">content</span>(response, <span class="at">as =</span> <span class="st">"raw"</span>), path)</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">writeLines</span>(<span class="fu">format</span>(<span class="fu">Sys.time</span>(), <span class="at">tz =</span> <span class="st">"America/Chicago"</span>, <span class="at">usetz =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>               time_path)</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>data_dir <span class="ot">&lt;-</span> <span class="st">"data/assignment04"</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="fu">dir.create</span>(data_dir, <span class="at">recursive =</span> <span class="cn">TRUE</span>, <span class="at">showWarnings =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="co"># Use the sandbox's explicit invitation to practice scraping and check paths.</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="fu">paths_allowed</span>(book_urls)))</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_along</span>(book_urls)) {</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cache_html</span>(book_urls[i], <span class="fu">file.path</span>(data_dir, <span class="fu">paste0</span>(<span class="st">"books_page_"</span>, i, <span class="st">".html"</span>)),</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>             wiki_agent, <span class="fu">file.path</span>(data_dir, <span class="fu">paste0</span>(<span class="st">"books_page_"</span>, i, <span class="st">"_retrieval.txt"</span>)))</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">isTRUE</span>(<span class="fu">unname</span>(<span class="fu">paths_allowed</span>(wiki_url, <span class="at">bot =</span> <span class="st">"EPPS6302Research"</span>, <span class="at">user_agent =</span> wiki_agent))))</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a><span class="fu">cache_html</span>(wiki_url, <span class="fu">file.path</span>(data_dir, <span class="st">"wiki_reserves_raw.html"</span>),</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>           wiki_agent, <span class="fu">file.path</span>(data_dir, <span class="st">"wiki_reserves_retrieval.txt"</span>))</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">isTRUE</span>(<span class="fu">unname</span>(<span class="fu">paths_allowed</span>(internet_url, <span class="at">bot =</span> <span class="st">"EPPS6302Research"</span>, <span class="at">user_agent =</span> wiki_agent))))</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a><span class="fu">cache_html</span>(internet_url, <span class="fu">file.path</span>(data_dir, <span class="st">"wiki_internet_raw.html"</span>),</span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>           wiki_agent, <span class="fu">file.path</span>(data_dir, <span class="st">"wiki_internet_retrieval.txt"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<h2 id="books-to-scrape" class="anchored">1. Books to Scrape</h2>
+<p>The first page was used to test extraction of the title, price and rating. The same selectors were then applied to five pages. All five contained 20 books, producing 100 rows with no missing values or duplicate titles. Prices are in pounds sterling; the ratings are ordinal categories, converted to integers from one to five.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show R code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rvest)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyr)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(stringr)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>data_dir <span class="ot">&lt;-</span> <span class="st">"data/assignment04"</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>scrape_books <span class="ot">&lt;-</span> <span class="cf">function</span>(i) {</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  products <span class="ot">&lt;-</span> <span class="fu">read_html</span>(<span class="fu">file.path</span>(data_dir, <span class="fu">paste0</span>(<span class="st">"books_page_"</span>, i, <span class="st">".html"</span>))) <span class="sc">|&gt;</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">html_elements</span>(<span class="st">"article.product_pod"</span>)</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> products <span class="sc">|&gt;</span> <span class="fu">html_element</span>(<span class="st">"h3 a"</span>) <span class="sc">|&gt;</span> <span class="fu">html_attr</span>(<span class="st">"title"</span>),</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">price =</span> products <span class="sc">|&gt;</span> <span class="fu">html_element</span>(<span class="st">"p.price_color"</span>) <span class="sc">|&gt;</span> <span class="fu">html_text2</span>(),</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">rating =</span> products <span class="sc">|&gt;</span> <span class="fu">html_element</span>(<span class="st">"p.star-rating"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>      <span class="fu">html_attr</span>(<span class="st">"class"</span>) <span class="sc">|&gt;</span> <span class="fu">str_remove</span>(<span class="st">"star-rating "</span>),</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">page =</span> i,</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">source_url =</span> <span class="fu">paste0</span>(<span class="st">"https://books.toscrape.com/catalogue/page-"</span>, i, <span class="st">".html"</span>)</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">price_gbp =</span> <span class="fu">parse_number</span>(price),</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>           <span class="at">rating_numeric =</span> <span class="fu">match</span>(rating, <span class="fu">c</span>(<span class="st">"One"</span>,<span class="st">"Two"</span>,<span class="st">"Three"</span>,<span class="st">"Four"</span>,<span class="st">"Five"</span>)))</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>books_first <span class="ot">&lt;-</span> <span class="fu">scrape_books</span>(<span class="dv">1</span>)</span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>books <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(<span class="fu">lapply</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, scrape_books))</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">nrow</span>(books) <span class="sc">==</span> <span class="dv">100</span>, <span class="fu">all</span>(<span class="fu">table</span>(books<span class="sc">$</span>page) <span class="sc">==</span> <span class="dv">20</span>),</span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>          <span class="sc">!</span><span class="fu">anyNA</span>(books), <span class="sc">!</span><span class="fu">anyDuplicated</span>(books<span class="sc">$</span>title))</span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">head</span>(books <span class="sc">|&gt;</span> <span class="fu">select</span>(title, price_gbp, rating_numeric), <span class="dv">5</span>),</span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>             <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">"Book title"</span>, <span class="st">"Price (GBP)"</span>, <span class="st">"Rating"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Book title</th>
+<th style="text-align: right;">Price (GBP)</th>
+<th style="text-align: right;">Rating</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">A Light in the Attic</td>
+<td style="text-align: right;">51.77</td>
+<td style="text-align: right;">3</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Tipping the Velvet</td>
+<td style="text-align: right;">53.74</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Soumission</td>
+<td style="text-align: right;">50.10</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Sharp Objects</td>
+<td style="text-align: right;">47.82</td>
+<td style="text-align: right;">4</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Sapiens: A Brief History of Humankind</td>
+<td style="text-align: right;">54.23</td>
+<td style="text-align: right;">5</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="cell" data-tbl-cap="Book prices and rating distribution.">
+<details class="code-fold">
+<summary>Show R code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>book_summary <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">Books =</span> <span class="fu">nrow</span>(books), <span class="at">Pages =</span> <span class="fu">n_distinct</span>(books<span class="sc">$</span>page),</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">Minimum price (£)</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">min</span>(books<span class="sc">$</span>price_gbp),</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">Median price (£)</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">median</span>(books<span class="sc">$</span>price_gbp),</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">Mean price (£)</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">mean</span>(books<span class="sc">$</span>price_gbp),</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">Maximum price (£)</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">max</span>(books<span class="sc">$</span>price_gbp)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(book_summary, <span class="at">digits =</span> <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top">
+<colgroup>
+<col style="width: 7%">
+<col style="width: 7%">
+<col style="width: 22%">
+<col style="width: 21%">
+<col style="width: 18%">
+<col style="width: 22%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">Books</th>
+<th style="text-align: right;">Pages</th>
+<th style="text-align: right;">Minimum price (£)</th>
+<th style="text-align: right;">Median price (£)</th>
+<th style="text-align: right;">Mean price (£)</th>
+<th style="text-align: right;">Maximum price (£)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">100</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">10.16</td>
+<td style="text-align: right;">34.78</td>
+<td style="text-align: right;">34.56</td>
+<td style="text-align: right;">58.11</td>
+</tr>
+</tbody>
+</table>
+</div>
+<details class="code-fold">
+<summary>Show R code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">count</span>(books, rating_numeric, <span class="at">name =</span> <span class="st">"Books"</span>),</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>             <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">"Rating (stars)"</span>, <span class="st">"Books"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top">
+<thead>
+<tr class="header">
+<th style="text-align: right;">Rating (stars)</th>
+<th style="text-align: right;">Books</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">22</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">19</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">22</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">18</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">19</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Book prices and rating distribution.</p>
+</div>
+<h2 id="wikipedia-tables-and-data-cleaning" class="anchored">2. Wikipedia tables and data cleaning</h2>
+<p>The <a href="https://en.wikipedia.org/wiki/List_of_countries_by_foreign-exchange_reserves">foreign-exchange reserves page</a> contains two <code>wikitable</code> elements. The country-level table has 198 rows and eight columns, including two repeated header rows after the first header. The second table describes global reserve currency composition and is not the target.</p>
+<p>The first table was cleaned by removing the extra headers, reference markers and nonbreaking or thin spaces, dropping the change, excluding-gold and reference columns, and checking for aggregate rows. No aggregate row remained among the 196 entries. The reserves including gold column is converted from USD millions to USD. Country labels with trailing asterisks are preserved in the raw data and cleaned separately for matching.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show R code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>clean_text <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  x <span class="sc">|&gt;</span> <span class="fu">as.character</span>() <span class="sc">|&gt;</span> <span class="fu">str_remove_all</span>(<span class="st">"</span><span class="sc">\\</span><span class="st">[[^</span><span class="sc">\\</span><span class="st">]]*</span><span class="sc">\\</span><span class="st">]"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">str_replace_all</span>(<span class="st">"[\u00a0\u2009\u202f]"</span>, <span class="st">" "</span>) <span class="sc">|&gt;</span> <span class="fu">str_squish</span>()</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Strict day-month-year parser: do not guess between date orders.</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>strict_dmy <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  p <span class="ot">&lt;-</span> <span class="fu">str_match</span>(x, <span class="st">"^([0-9]{1,2})</span><span class="sc">\\</span><span class="st">s+([[:alpha:]]+)</span><span class="sc">\\</span><span class="st">s+([0-9]{4})$"</span>)</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  mm <span class="ot">&lt;-</span> <span class="fu">match</span>(<span class="fu">str_to_lower</span>(<span class="fu">str_sub</span>(p[,<span class="dv">3</span>], <span class="dv">1</span>, <span class="dv">3</span>)), <span class="fu">str_to_lower</span>(month.abb))</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  iso <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="cn">NA_character_</span>, <span class="fu">length</span>(x))</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  good <span class="ot">&lt;-</span> <span class="sc">!</span><span class="fu">is.na</span>(p[,<span class="dv">2</span>]) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.na</span>(mm) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.na</span>(p[,<span class="dv">4</span>])</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  iso[good] <span class="ot">&lt;-</span> <span class="fu">sprintf</span>(<span class="st">"%04d-%02d-%02d"</span>, <span class="fu">as.integer</span>(p[good,<span class="dv">4</span>]),</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>                      mm[good], <span class="fu">as.integer</span>(p[good,<span class="dv">2</span>]))</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>  result <span class="ot">&lt;-</span> <span class="fu">as.Date</span>(iso, <span class="at">format =</span> <span class="st">"%Y-%m-%d"</span>)</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>  ok <span class="ot">&lt;-</span> <span class="sc">!</span><span class="fu">is.na</span>(result) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.na</span>(iso)</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>  bad <span class="ot">&lt;-</span> <span class="fu">which</span>(ok <span class="sc">&amp;</span> <span class="fu">format</span>(result, <span class="st">"%Y-%m-%d"</span>) <span class="sc">!=</span> iso)</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>  result[bad] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>  result</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>wiki_tables <span class="ot">&lt;-</span> <span class="fu">read_html</span>(<span class="fu">file.path</span>(data_dir, <span class="st">"wiki_reserves_raw.html"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">html_elements</span>(<span class="st">"table.wikitable"</span>) <span class="sc">|&gt;</span> <span class="fu">html_table</span>()</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">length</span>(wiki_tables) <span class="sc">==</span> <span class="dv">2</span>)</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>clean_reserves <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stopifnot</span>(<span class="fu">ncol</span>(x) <span class="sc">==</span> <span class="dv">8</span>, <span class="fu">grepl</span>(<span class="st">"Including gold"</span>, x[[<span class="dv">3</span>]][<span class="dv">1</span>], <span class="at">ignore.case =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">names</span>(x) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"country"</span>, <span class="st">"continent"</span>, <span class="st">"reserves_including_gold"</span>,</span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>                <span class="st">"change_including_gold"</span>, <span class="st">"reserves_excluding_gold"</span>,</span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>                <span class="st">"change_excluding_gold"</span>, <span class="st">"reported_date"</span>, <span class="st">"reference"</span>)</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>  x <span class="sc">|&gt;</span> <span class="fu">slice</span>(<span class="sc">-</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>)) <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">everything</span>(), clean_text)) <span class="sc">|&gt;</span></span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(country), country <span class="sc">!=</span> <span class="st">""</span>,</span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>           <span class="sc">!</span><span class="fu">str_detect</span>(country, <span class="fu">regex</span>(<span class="st">"^(World|Total|Grand Total|World Total|European Union|Euro Area|Eurozone)$"</span>,</span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>                                      <span class="at">ignore_case =</span> <span class="cn">TRUE</span>))) <span class="sc">|&gt;</span></span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>    <span class="fu">transmute</span>(country, continent,</span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>              <span class="at">reserves_usd_million =</span> <span class="fu">parse_number</span>(reserves_including_gold),</span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>              <span class="at">reserves_usd =</span> reserves_usd_million <span class="sc">*</span> <span class="fl">1e6</span>,</span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>              <span class="at">reported_date_raw =</span> reported_date,</span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>              <span class="at">reported_date =</span> <span class="fu">strict_dmy</span>(reported_date_raw),</span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>              <span class="at">reported_year =</span> <span class="fu">as.integer</span>(<span class="fu">str_extract</span>(reported_date_raw, <span class="st">"</span><span class="sc">\\</span><span class="st">b(?:19|20)</span><span class="sc">\\</span><span class="st">d{2}</span><span class="sc">\\</span><span class="st">b"</span>)))</span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a>wiki_reserves <span class="ot">&lt;-</span> <span class="fu">clean_reserves</span>(wiki_tables[[<span class="dv">1</span>]])</span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a>old <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="fu">file.path</span>(data_dir, <span class="st">"wiki_reserves_clean.csv"</span>), <span class="at">show_col_types =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">nrow</span>(wiki_reserves) <span class="sc">==</span> <span class="dv">196</span>, <span class="sc">!</span><span class="fu">anyDuplicated</span>(wiki_reserves<span class="sc">$</span>country),</span>
+<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a>          <span class="fu">identical</span>(wiki_reserves<span class="sc">$</span>country, old<span class="sc">$</span>country),</span>
+<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a>          <span class="fu">all</span>(wiki_reserves<span class="sc">$</span>reserves_usd <span class="sc">==</span> old<span class="sc">$</span>reserves_usd),</span>
+<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a>          <span class="fu">all</span>(wiki_reserves<span class="sc">$</span>reported_year <span class="sc">==</span> old<span class="sc">$</span>reported_year))</span>
+<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a>date_fixes <span class="ot">&lt;-</span> <span class="fu">sum</span>(wiki_reserves<span class="sc">$</span>reported_date <span class="sc">!=</span> <span class="fu">as.Date</span>(old<span class="sc">$</span>reported_date), <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">count</span>(wiki_reserves, reported_year, <span class="at">name =</span> <span class="st">"Entries"</span>),</span>
+<span id="cb5-48"><a href="#cb5-48" aria-hidden="true" tabindex="-1"></a>             <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">"Reported year"</span>, <span class="st">"Entries"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top">
+<thead>
+<tr class="header">
+<th style="text-align: right;">Reported year</th>
+<th style="text-align: right;">Entries</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">169</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">6</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">2026</td>
+<td style="text-align: right;">21</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>A validation against the raw strings found 130 incorrectly parsed valid dates in the initial CSV (for example, 1 March 2024 had become 20 January 2024). The corrected parser uses an explicit day–month–year format. Albania’s source date, 31 April 2024, is invalid and remains missing as a full date; the printed year 2024 is retained for annual matching and its date uncertainty is flagged. The initial CSV and HTML are preserved, and the corrected dates are used for the analysis below.</p>
+<h3 id="alternative-table-and-parser-fragility" class="anchored">Alternative table and parser fragility</h3>
+<p>The <a href="https://en.wikipedia.org/wiki/List_of_countries_by_number_of_internet_users">internet users page</a> has a single three-column table (<code>Location</code>, <code>Rate</code>, <code>Year</code>). Applying the reserves parser to this table fails the eight-column assertion. Removing two header rows would also incorrectly delete valid observations from the new table. The adapted parser uses the actual column names, parses percentages and years, and removes aggregate rows. It produces 225 entries with no missing fields; 222 are labeled 2026, which is a reported year and not necessarily a survey year.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show R code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>internet_tables <span class="ot">&lt;-</span> <span class="fu">read_html</span>(<span class="fu">file.path</span>(data_dir, <span class="st">"wiki_internet_raw.html"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">html_elements</span>(<span class="st">"table.wikitable"</span>) <span class="sc">|&gt;</span> <span class="fu">html_table</span>()</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>target_id <span class="ot">&lt;-</span> <span class="fu">which</span>(<span class="fu">vapply</span>(internet_tables, <span class="cf">function</span>(x) {</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">all</span>(<span class="fu">c</span>(<span class="st">"location"</span>,<span class="st">"rate"</span>,<span class="st">"year"</span>) <span class="sc">%in%</span> <span class="fu">tolower</span>(<span class="fu">clean_text</span>(<span class="fu">names</span>(x))))</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>}, <span class="fu">logical</span>(<span class="dv">1</span>)))</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">length</span>(target_id) <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>internet_raw <span class="ot">&lt;-</span> internet_tables[[target_id]]</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>parser_test <span class="ot">&lt;-</span> <span class="fu">tryCatch</span>({</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">clean_reserves</span>(internet_raw)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Original parser succeeded."</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>}, <span class="at">error =</span> <span class="cf">function</span>(e) <span class="fu">paste</span>(<span class="st">"Original parser failed:"</span>, <span class="fu">conditionMessage</span>(e)))</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>parser_test</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "Original parser failed: ncol(x) == 8 is not TRUE"</code></pre>
+</div>
+<details class="code-fold">
+<summary>Show R code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>wiki_internet <span class="ot">&lt;-</span> internet_raw <span class="sc">|&gt;</span> janitor<span class="sc">::</span><span class="fu">clean_names</span>() <span class="sc">|&gt;</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">transmute</span>(<span class="at">country =</span> <span class="fu">clean_text</span>(location),</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>            <span class="at">internet_usage_pct =</span> <span class="fu">parse_number</span>(<span class="fu">clean_text</span>(rate)),</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>            <span class="at">year =</span> <span class="fu">as.integer</span>(<span class="fu">parse_number</span>(<span class="fu">clean_text</span>(year)))) <span class="sc">|&gt;</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(country), country <span class="sc">!=</span> <span class="st">""</span>,</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>         <span class="sc">!</span><span class="fu">str_detect</span>(country, <span class="fu">regex</span>(<span class="st">"^(World|Total|Grand Total)$"</span>, <span class="at">ignore_case =</span> <span class="cn">TRUE</span>)))</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">nrow</span>(wiki_internet) <span class="sc">==</span> <span class="dv">225</span>, <span class="sc">!</span><span class="fu">anyNA</span>(wiki_internet),</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>          <span class="sc">!</span><span class="fu">anyDuplicated</span>(wiki_internet<span class="sc">$</span>country),</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>          <span class="fu">all</span>(<span class="fu">between</span>(wiki_internet<span class="sc">$</span>internet_usage_pct, <span class="dv">0</span>, <span class="dv">100</span>)))</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">head</span>(wiki_internet, <span class="dv">5</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top">
+<thead>
+<tr class="header">
+<th style="text-align: left;">country</th>
+<th style="text-align: right;">internet_usage_pct</th>
+<th style="text-align: right;">year</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Afghanistan</td>
+<td style="text-align: right;">24.4</td>
+<td style="text-align: right;">2026</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Albania</td>
+<td style="text-align: right;">89.4</td>
+<td style="text-align: right;">2026</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Algeria</td>
+<td style="text-align: right;">85.2</td>
+<td style="text-align: right;">2026</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Andorra</td>
+<td style="text-align: right;">94.4</td>
+<td style="text-align: right;">2026</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Angola</td>
+<td style="text-align: right;">40.7</td>
+<td style="text-align: right;">2026</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<h2 id="world-bank-api-and-source-comparison" class="anchored">3. World Bank API and source comparison</h2>
+<p>The <a href="https://data.worldbank.org/indicator/FI.RES.TOTL.CD">World Bank indicator FI.RES.TOTL.CD</a> measures total reserves including gold in current US dollars. One <code>WDI()</code> call retrieved 2015–2025 data. After removing aggregate regions, the dataset contains 2,354 economy-year rows (214 economies), including 500 missing values. Missing values are not treated as zero.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show R code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(WDI)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>wdi_raw <span class="ot">&lt;-</span> WDI<span class="sc">::</span><span class="fu">WDI</span>(<span class="at">country =</span> <span class="st">"all"</span>, <span class="at">indicator =</span> <span class="st">"FI.RES.TOTL.CD"</span>,</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>                    <span class="at">start =</span> <span class="dv">2015</span>, <span class="at">end =</span> <span class="dv">2025</span>, <span class="at">extra =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(wdi_raw, <span class="fu">file.path</span>(data_dir, <span class="st">"wdi_reserves_raw.rds"</span>))</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>wdi_reserves <span class="ot">&lt;-</span> wdi_raw <span class="sc">|&gt;</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(region), region <span class="sc">!=</span> <span class="st">"Aggregates"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">transmute</span>(country, iso2c, iso3c, year, <span class="at">reserves_usd =</span> FI.RES.TOTL.CD)</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="fu">write_csv</span>(wdi_reserves, <span class="fu">file.path</span>(data_dir, <span class="st">"wdi_reserves.csv"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Show R code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>wdi <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="fu">file.path</span>(data_dir, <span class="st">"wdi_reserves.csv"</span>), <span class="at">show_col_types =</span> <span class="cn">FALSE</span>) <span class="sc">|&gt;</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">wdi_usd =</span> reserves_usd)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">anyDuplicated</span>(wdi[<span class="fu">c</span>(<span class="st">"iso3c"</span>, <span class="st">"year"</span>)]), <span class="fu">all</span>(wdi<span class="sc">$</span>wdi_usd <span class="sc">&gt;</span> <span class="dv">0</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>economies <span class="ot">&lt;-</span> <span class="fu">distinct</span>(wdi, country, iso3c)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Explicit crosswalk for names that differ across sources; no fuzzy joins.</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>aliases <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="st">"Bahamas"</span> <span class="ot">=</span> <span class="st">"Bahamas, The"</span>,</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Brunei"</span> <span class="ot">=</span> <span class="st">"Brunei Darussalam"</span>,</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Cape Verde"</span> <span class="ot">=</span> <span class="st">"Cabo Verde"</span>,</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Curaçao"</span> <span class="ot">=</span> <span class="st">"Curacao"</span>,</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Czech Republic"</span> <span class="ot">=</span> <span class="st">"Czechia"</span>,</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Democratic Republic of the Congo"</span> <span class="ot">=</span> <span class="st">"Congo, Dem. Rep."</span>,</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Egypt"</span> <span class="ot">=</span> <span class="st">"Egypt, Arab Rep."</span>,</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Federated States of Micronesia"</span> <span class="ot">=</span> <span class="st">"Micronesia, Fed. Sts."</span>,</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Gambia"</span> <span class="ot">=</span> <span class="st">"Gambia, The"</span>,</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Hong Kong"</span> <span class="ot">=</span> <span class="st">"Hong Kong SAR, China"</span>,</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Iran"</span> <span class="ot">=</span> <span class="st">"Iran, Islamic Rep."</span>,</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Ivory Coast"</span> <span class="ot">=</span> <span class="st">"Cote d'Ivoire"</span>,</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Kyrgyzstan"</span> <span class="ot">=</span> <span class="st">"Kyrgyz Republic"</span>,</span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Laos"</span> <span class="ot">=</span> <span class="st">"Lao PDR"</span>,</span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Macau"</span> <span class="ot">=</span> <span class="st">"Macao SAR, China"</span>,</span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>  <span class="st">"North Korea"</span> <span class="ot">=</span> <span class="st">"Korea, Dem. People's Rep."</span>,</span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Palestine"</span> <span class="ot">=</span> <span class="st">"West Bank and Gaza"</span>,</span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Republic of the Congo"</span> <span class="ot">=</span> <span class="st">"Congo, Rep."</span>,</span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Russia"</span> <span class="ot">=</span> <span class="st">"Russian Federation"</span>,</span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Saint Kitts and Nevis"</span> <span class="ot">=</span> <span class="st">"St. Kitts and Nevis"</span>,</span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Saint Lucia"</span> <span class="ot">=</span> <span class="st">"St. Lucia"</span>,</span>
+<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Saint Vincent and the Grenadines"</span> <span class="ot">=</span> <span class="st">"St. Vincent and the Grenadines"</span>,</span>
+<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Slovakia"</span> <span class="ot">=</span> <span class="st">"Slovak Republic"</span>,</span>
+<span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a>  <span class="st">"South Korea"</span> <span class="ot">=</span> <span class="st">"Korea, Rep."</span>,</span>
+<span id="cb10-32"><a href="#cb10-32" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Syria"</span> <span class="ot">=</span> <span class="st">"Syrian Arab Republic"</span>,</span>
+<span id="cb10-33"><a href="#cb10-33" aria-hidden="true" tabindex="-1"></a>  <span class="st">"São Tomé and Príncipe"</span> <span class="ot">=</span> <span class="st">"Sao Tome and Principe"</span>,</span>
+<span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Turkey"</span> <span class="ot">=</span> <span class="st">"Turkiye"</span>,</span>
+<span id="cb10-35"><a href="#cb10-35" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Venezuela"</span> <span class="ot">=</span> <span class="st">"Venezuela, RB"</span>,</span>
+<span id="cb10-36"><a href="#cb10-36" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Vietnam"</span> <span class="ot">=</span> <span class="st">"Viet Nam"</span>,</span>
+<span id="cb10-37"><a href="#cb10-37" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Yemen"</span> <span class="ot">=</span> <span class="st">"Yemen, Rep."</span></span>
+<span id="cb10-38"><a href="#cb10-38" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb10-39"><a href="#cb10-39" aria-hidden="true" tabindex="-1"></a>wiki <span class="ot">&lt;-</span> wiki_reserves <span class="sc">|&gt;</span></span>
+<span id="cb10-40"><a href="#cb10-40" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">country_clean =</span> <span class="fu">str_remove</span>(country, <span class="st">"</span><span class="sc">\\</span><span class="st">s*</span><span class="sc">\\</span><span class="st">*+$"</span>),</span>
+<span id="cb10-41"><a href="#cb10-41" aria-hidden="true" tabindex="-1"></a>         <span class="at">wdi_name =</span> <span class="fu">coalesce</span>(<span class="fu">unname</span>(aliases[country_clean]), country_clean)) <span class="sc">|&gt;</span></span>
+<span id="cb10-42"><a href="#cb10-42" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(economies, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"wdi_name"</span> <span class="ot">=</span> <span class="st">"country"</span>), <span class="at">na_matches =</span> <span class="st">"never"</span>)</span>
+<span id="cb10-43"><a href="#cb10-43" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">nrow</span>(wiki) <span class="sc">==</span> <span class="dv">196</span>, <span class="sc">!</span><span class="fu">anyDuplicated</span>(<span class="fu">na.omit</span>(wiki<span class="sc">$</span>iso3c)))</span>
+<span id="cb10-44"><a href="#cb10-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-45"><a href="#cb10-45" aria-hidden="true" tabindex="-1"></a>same <span class="ot">&lt;-</span> wiki <span class="sc">|&gt;</span></span>
+<span id="cb10-46"><a href="#cb10-46" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(<span class="fu">select</span>(wdi, iso3c, year, wdi_usd),</span>
+<span id="cb10-47"><a href="#cb10-47" aria-hidden="true" tabindex="-1"></a>            <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"iso3c"</span>, <span class="st">"reported_year"</span> <span class="ot">=</span> <span class="st">"year"</span>), <span class="at">na_matches =</span> <span class="st">"never"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb10-48"><a href="#cb10-48" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">wdi_year =</span> <span class="fu">if_else</span>(<span class="sc">!</span><span class="fu">is.na</span>(wdi_usd), reported_year, <span class="cn">NA_integer_</span>))</span>
+<span id="cb10-49"><a href="#cb10-49" aria-hidden="true" tabindex="-1"></a>latest_wdi <span class="ot">&lt;-</span> wdi <span class="sc">|&gt;</span> <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(wdi_usd)) <span class="sc">|&gt;</span></span>
+<span id="cb10-50"><a href="#cb10-50" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(iso3c) <span class="sc">|&gt;</span> <span class="fu">slice_max</span>(year, <span class="at">n =</span> <span class="dv">1</span>, <span class="at">with_ties =</span> <span class="cn">FALSE</span>) <span class="sc">|&gt;</span> <span class="fu">ungroup</span>() <span class="sc">|&gt;</span></span>
+<span id="cb10-51"><a href="#cb10-51" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(iso3c, <span class="at">wdi_year =</span> year, wdi_usd)</span>
+<span id="cb10-52"><a href="#cb10-52" aria-hidden="true" tabindex="-1"></a>latest <span class="ot">&lt;-</span> wiki <span class="sc">|&gt;</span> <span class="fu">left_join</span>(latest_wdi, <span class="at">by =</span> <span class="st">"iso3c"</span>, <span class="at">na_matches =</span> <span class="st">"never"</span>)</span>
+<span id="cb10-53"><a href="#cb10-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-54"><a href="#cb10-54" aria-hidden="true" tabindex="-1"></a>compare <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
+<span id="cb10-55"><a href="#cb10-55" aria-hidden="true" tabindex="-1"></a>  x <span class="sc">|&gt;</span> <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(wdi_usd)) <span class="sc">|&gt;</span></span>
+<span id="cb10-56"><a href="#cb10-56" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">diff_usd =</span> reserves_usd <span class="sc">-</span> wdi_usd,</span>
+<span id="cb10-57"><a href="#cb10-57" aria-hidden="true" tabindex="-1"></a>           <span class="at">pct_diff =</span> <span class="dv">100</span> <span class="sc">*</span> diff_usd <span class="sc">/</span> wdi_usd)</span>
+<span id="cb10-58"><a href="#cb10-58" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb10-59"><a href="#cb10-59" aria-hidden="true" tabindex="-1"></a>same_valid <span class="ot">&lt;-</span> <span class="fu">compare</span>(same)</span>
+<span id="cb10-60"><a href="#cb10-60" aria-hidden="true" tabindex="-1"></a>latest_valid <span class="ot">&lt;-</span> <span class="fu">compare</span>(latest)</span>
+<span id="cb10-61"><a href="#cb10-61" aria-hidden="true" tabindex="-1"></a>summary_comparison <span class="ot">&lt;-</span> <span class="cf">function</span>(x, label) {</span>
+<span id="cb10-62"><a href="#cb10-62" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(<span class="at">Comparison =</span> label, <span class="at">Matched =</span> <span class="fu">nrow</span>(x),</span>
+<span id="cb10-63"><a href="#cb10-63" aria-hidden="true" tabindex="-1"></a>         <span class="at">Identical =</span> <span class="fu">sum</span>(x<span class="sc">$</span>diff_usd <span class="sc">==</span> <span class="dv">0</span>),</span>
+<span id="cb10-64"><a href="#cb10-64" aria-hidden="true" tabindex="-1"></a>         <span class="st">`</span><span class="at">Wikipedia higher</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">sum</span>(x<span class="sc">$</span>diff_usd <span class="sc">&gt;</span> <span class="dv">0</span>),</span>
+<span id="cb10-65"><a href="#cb10-65" aria-hidden="true" tabindex="-1"></a>         <span class="st">`</span><span class="at">WDI higher</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">sum</span>(x<span class="sc">$</span>diff_usd <span class="sc">&lt;</span> <span class="dv">0</span>),</span>
+<span id="cb10-66"><a href="#cb10-66" aria-hidden="true" tabindex="-1"></a>         <span class="st">`</span><span class="at">Median absolute difference (%)</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">median</span>(<span class="fu">abs</span>(x<span class="sc">$</span>pct_diff)))</span>
+<span id="cb10-67"><a href="#cb10-67" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb10-68"><a href="#cb10-68" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">bind_rows</span>(<span class="fu">summary_comparison</span>(same_valid, <span class="st">"Same reported year"</span>),</span>
+<span id="cb10-69"><a href="#cb10-69" aria-hidden="true" tabindex="-1"></a>                       <span class="fu">summary_comparison</span>(latest_valid, <span class="st">"Latest WDI observation"</span>)),</span>
+<span id="cb10-70"><a href="#cb10-70" aria-hidden="true" tabindex="-1"></a>             <span class="at">digits =</span> <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top">
+<colgroup>
+<col style="width: 23%">
+<col style="width: 8%">
+<col style="width: 10%">
+<col style="width: 17%">
+<col style="width: 11%">
+<col style="width: 31%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Comparison</th>
+<th style="text-align: right;">Matched</th>
+<th style="text-align: right;">Identical</th>
+<th style="text-align: right;">Wikipedia higher</th>
+<th style="text-align: right;">WDI higher</th>
+<th style="text-align: right;">Median absolute difference (%)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Same reported year</td>
+<td style="text-align: right;">143</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">36</td>
+<td style="text-align: right;">107</td>
+<td style="text-align: right;">17.38</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Latest WDI observation</td>
+<td style="text-align: right;">176</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">136</td>
+<td style="text-align: right;">26.83</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>The country-name crosswalk matches 192 of 196 Wikipedia entries to the WDI economy list. Taiwan, Vatican City, Montserrat and Somalia are absent from this specific WDI extract. Of the matched economies, 143 have a nonmissing WDI value in the Wikipedia-reported year (138 in 2024 and five in 2025); 176 have at least one valid WDI observation in the retrieved window. All valid pairs differ numerically in both comparisons. The median absolute percentage difference is calculated relative to WDI, not relative to Wikipedia.</p>
+<div class="cell" data-tbl-cap="Largest same-year absolute differences (USD billions).">
+<details class="code-fold">
+<summary>Show R code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>same_valid <span class="sc">|&gt;</span> <span class="fu">arrange</span>(<span class="fu">desc</span>(<span class="fu">abs</span>(diff_usd))) <span class="sc">|&gt;</span> <span class="fu">slice_head</span>(<span class="at">n =</span> <span class="dv">6</span>) <span class="sc">|&gt;</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">transmute</span>(<span class="at">Country =</span> country_clean, <span class="at">Year =</span> reported_year,</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>            <span class="at">Wikipedia =</span> reserves_usd <span class="sc">/</span> <span class="fl">1e9</span>, <span class="at">WDI =</span> wdi_usd <span class="sc">/</span> <span class="fl">1e9</span>,</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>            <span class="st">`</span><span class="at">Difference (Wiki − WDI)</span><span class="st">`</span> <span class="ot">=</span> diff_usd <span class="sc">/</span> <span class="fl">1e9</span>) <span class="sc">|&gt;</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="at">digits =</span> <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top">
+<caption>Largest same-year absolute differences (USD billions).</caption>
+<colgroup>
+<col style="width: 30%">
+<col style="width: 7%">
+<col style="width: 14%">
+<col style="width: 11%">
+<col style="width: 35%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Country</th>
+<th style="text-align: right;">Year</th>
+<th style="text-align: right;">Wikipedia</th>
+<th style="text-align: right;">WDI</th>
+<th style="text-align: right;">Difference (Wiki − WDI)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">United States</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">253.77</td>
+<td style="text-align: right;">1385.45</td>
+<td style="text-align: right;">-1131.68</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Poland</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">223.20</td>
+<td style="text-align: right;">271.81</td>
+<td style="text-align: right;">-48.61</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Netherlands</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">125.45</td>
+<td style="text-align: right;">79.13</td>
+<td style="text-align: right;">46.32</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Belgium</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">82.00</td>
+<td style="text-align: right;">42.33</td>
+<td style="text-align: right;">39.67</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Germany</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">345.34</td>
+<td style="text-align: right;">377.94</td>
+<td style="text-align: right;">-32.60</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">United Arab Emirates</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">210.00</td>
+<td style="text-align: right;">237.93</td>
+<td style="text-align: right;">-27.93</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>The largest same-year gap is for the United States, whose Wikipedia value is lower than WDI by approximately $1.13 trillion. The Netherlands and Belgium show gaps in the opposite direction. These are differences between sources, not verified measurement errors. Wikipedia observations are snapshots from 2024–2026, with dates that vary across economies; WDI observations are annual, and the latest nonmissing years in the matched data range from 2017 to 2025. Even the same-year comparison does not align the exact date. The <a href="https://databank.worldbank.org/metadataglossary/world-development-indicators/series/FI.RES.TOTL.CD">WDI metadata</a> also includes monetary gold, SDRs and IMF reserve positions, with year-end gold valuation. Timing, coverage, valuation conventions and revisions are plausible explanations; attributing individual gaps requires checking the underlying sources.</p>
+<p><strong>When to scrape:</strong> Web scraping is appropriate when the information needed is available only through accessible web pages, automated retrieval is permitted, and a documented API or bulk download cannot meet the research need. When a structured API or official download provides the required data, it is preferable because the schema and provenance are easier to validate and the collection process is less vulnerable to changes in page layout.</p>
+<div>
+<blockquote>
+<p><strong>Complete country-level comparisons</strong></p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show R code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>format_comparison <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  x <span class="sc">|&gt;</span> <span class="fu">arrange</span>(country_clean) <span class="sc">|&gt;</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">transmute</span>(<span class="at">Economy =</span> country_clean, <span class="st">`</span><span class="at">Wiki date</span><span class="st">`</span> <span class="ot">=</span> reported_date_raw,</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>              <span class="st">`</span><span class="at">WDI year</span><span class="st">`</span> <span class="ot">=</span> wdi_year,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>              <span class="st">`</span><span class="at">Wiki (USD bn)</span><span class="st">`</span> <span class="ot">=</span> reserves_usd <span class="sc">/</span> <span class="fl">1e9</span>,</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>              <span class="st">`</span><span class="at">WDI (USD bn)</span><span class="st">`</span> <span class="ot">=</span> wdi_usd <span class="sc">/</span> <span class="fl">1e9</span>,</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>              <span class="st">`</span><span class="at">Difference (%)</span><span class="st">`</span> <span class="ot">=</span> pct_diff)</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">format_comparison</span>(same_valid), <span class="at">digits =</span> <span class="dv">3</span>,</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>             <span class="at">caption =</span> <span class="st">"All valid same-year pairs."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top">
+<caption>All valid same-year pairs.</caption>
+<colgroup>
+<col style="width: 34%">
+<col style="width: 12%">
+<col style="width: 9%">
+<col style="width: 14%">
+<col style="width: 13%">
+<col style="width: 15%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Economy</th>
+<th style="text-align: left;">Wiki date</th>
+<th style="text-align: right;">WDI year</th>
+<th style="text-align: right;">Wiki (USD bn)</th>
+<th style="text-align: right;">WDI (USD bn)</th>
+<th style="text-align: right;">Difference (%)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Albania</td>
+<td style="text-align: left;">31 Apr 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">5.290</td>
+<td style="text-align: right;">6.516</td>
+<td style="text-align: right;">-18.810</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Algeria</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">68.028</td>
+<td style="text-align: right;">83.007</td>
+<td style="text-align: right;">-18.046</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Angola</td>
+<td style="text-align: left;">15 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">14.200</td>
+<td style="text-align: right;">14.243</td>
+<td style="text-align: right;">-0.301</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Antigua and Barbuda</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.285</td>
+<td style="text-align: right;">0.358</td>
+<td style="text-align: right;">-20.489</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Armenia</td>
+<td style="text-align: left;">25 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">4.298</td>
+<td style="text-align: right;">3.685</td>
+<td style="text-align: right;">16.628</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Aruba</td>
+<td style="text-align: left;">15 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">1.017</td>
+<td style="text-align: right;">1.902</td>
+<td style="text-align: right;">-46.537</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Australia</td>
+<td style="text-align: left;">7 Nov 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">65.018</td>
+<td style="text-align: right;">60.404</td>
+<td style="text-align: right;">7.638</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Austria</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">34.856</td>
+<td style="text-align: right;">35.406</td>
+<td style="text-align: right;">-1.552</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Azerbaijan</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">11.650</td>
+<td style="text-align: right;">12.699</td>
+<td style="text-align: right;">-8.261</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Bahamas</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">1.758</td>
+<td style="text-align: right;">2.632</td>
+<td style="text-align: right;">-33.209</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Bahrain</td>
+<td style="text-align: left;">25 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">5.500</td>
+<td style="text-align: right;">4.949</td>
+<td style="text-align: right;">11.140</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Barbados</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.770</td>
+<td style="text-align: right;">1.654</td>
+<td style="text-align: right;">-53.437</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Belarus</td>
+<td style="text-align: left;">31 Aug 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">8.697</td>
+<td style="text-align: right;">8.912</td>
+<td style="text-align: right;">-2.415</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Belgium</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">82.000</td>
+<td style="text-align: right;">42.331</td>
+<td style="text-align: right;">93.713</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Belize</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.281</td>
+<td style="text-align: right;">0.498</td>
+<td style="text-align: right;">-43.584</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Bhutan</td>
+<td style="text-align: left;">10 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.972</td>
+<td style="text-align: right;">0.941</td>
+<td style="text-align: right;">3.292</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Bolivia</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">1.769</td>
+<td style="text-align: right;">1.977</td>
+<td style="text-align: right;">-10.522</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Bosnia and Herzegovina</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">8.711</td>
+<td style="text-align: right;">9.419</td>
+<td style="text-align: right;">-7.515</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Botswana</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">5.080</td>
+<td style="text-align: right;">3.456</td>
+<td style="text-align: right;">47.005</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Brunei</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">3.664</td>
+<td style="text-align: right;">4.414</td>
+<td style="text-align: right;">-16.997</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Bulgaria</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">35.395</td>
+<td style="text-align: right;">43.698</td>
+<td style="text-align: right;">-19.001</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Cambodia</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">18.496</td>
+<td style="text-align: right;">22.506</td>
+<td style="text-align: right;">-17.816</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Cameroon</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">3.459</td>
+<td style="text-align: right;">5.062</td>
+<td style="text-align: right;">-31.661</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Canada</td>
+<td style="text-align: left;">1 Nov 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">123.084</td>
+<td style="text-align: right;">119.778</td>
+<td style="text-align: right;">2.760</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Cape Verde</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.712</td>
+<td style="text-align: right;">0.783</td>
+<td style="text-align: right;">-9.080</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Central African Republic</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.375</td>
+<td style="text-align: right;">0.489</td>
+<td style="text-align: right;">-23.358</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Chad</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.143</td>
+<td style="text-align: right;">1.548</td>
+<td style="text-align: right;">-90.760</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Chile</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">42.527</td>
+<td style="text-align: right;">44.403</td>
+<td style="text-align: right;">-4.225</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Colombia</td>
+<td style="text-align: left;">8 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">57.269</td>
+<td style="text-align: right;">61.898</td>
+<td style="text-align: right;">-7.478</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Comoros</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.197</td>
+<td style="text-align: right;">0.324</td>
+<td style="text-align: right;">-39.187</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Costa Rica</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">13.200</td>
+<td style="text-align: right;">14.177</td>
+<td style="text-align: right;">-6.892</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Croatia</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">2.935</td>
+<td style="text-align: right;">3.335</td>
+<td style="text-align: right;">-12.002</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Cyprus</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">1.271</td>
+<td style="text-align: right;">2.087</td>
+<td style="text-align: right;">-39.107</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Czech Republic</td>
+<td style="text-align: left;">1 Nov 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">149.416</td>
+<td style="text-align: right;">146.281</td>
+<td style="text-align: right;">2.143</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Denmark</td>
+<td style="text-align: left;">1 Nov 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">93.196</td>
+<td style="text-align: right;">108.405</td>
+<td style="text-align: right;">-14.030</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Djibouti</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.504</td>
+<td style="text-align: right;">0.349</td>
+<td style="text-align: right;">44.526</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Dominica</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.168</td>
+<td style="text-align: right;">0.156</td>
+<td style="text-align: right;">7.712</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Dominican Republic</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">14.371</td>
+<td style="text-align: right;">13.471</td>
+<td style="text-align: right;">6.679</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Ecuador</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">3.305</td>
+<td style="text-align: right;">6.908</td>
+<td style="text-align: right;">-52.155</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Egypt</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">35.310</td>
+<td style="text-align: right;">44.921</td>
+<td style="text-align: right;">-21.396</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">El Salvador</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">2.510</td>
+<td style="text-align: right;">3.705</td>
+<td style="text-align: right;">-32.249</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Equatorial Guinea</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.046</td>
+<td style="text-align: right;">1.077</td>
+<td style="text-align: right;">-95.728</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Estonia</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">2.065</td>
+<td style="text-align: right;">2.075</td>
+<td style="text-align: right;">-0.458</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Eswatini</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.467</td>
+<td style="text-align: right;">0.537</td>
+<td style="text-align: right;">-12.966</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Ethiopia</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">3.430</td>
+<td style="text-align: right;">3.784</td>
+<td style="text-align: right;">-9.364</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Fiji</td>
+<td style="text-align: left;">5 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">1.065</td>
+<td style="text-align: right;">1.600</td>
+<td style="text-align: right;">-33.421</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Finland</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">7.995</td>
+<td style="text-align: right;">17.993</td>
+<td style="text-align: right;">-55.566</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">France</td>
+<td style="text-align: left;">1 Nov 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">272.693</td>
+<td style="text-align: right;">282.857</td>
+<td style="text-align: right;">-3.593</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Gabon</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">1.377</td>
+<td style="text-align: right;">0.639</td>
+<td style="text-align: right;">115.564</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Gambia</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.698</td>
+<td style="text-align: right;">0.629</td>
+<td style="text-align: right;">10.996</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Georgia</td>
+<td style="text-align: left;">25 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">5.224</td>
+<td style="text-align: right;">4.447</td>
+<td style="text-align: right;">17.467</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Germany</td>
+<td style="text-align: left;">1 Oct 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">345.338</td>
+<td style="text-align: right;">377.935</td>
+<td style="text-align: right;">-8.625</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Ghana</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">3.368</td>
+<td style="text-align: right;">7.117</td>
+<td style="text-align: right;">-52.679</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Greece</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">3.926</td>
+<td style="text-align: right;">15.222</td>
+<td style="text-align: right;">-74.208</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Grenada</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.247</td>
+<td style="text-align: right;">0.423</td>
+<td style="text-align: right;">-41.644</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Guatemala</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">21.390</td>
+<td style="text-align: right;">24.412</td>
+<td style="text-align: right;">-12.381</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Guinea</td>
+<td style="text-align: left;">15 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">1.425</td>
+<td style="text-align: right;">1.346</td>
+<td style="text-align: right;">5.901</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Guyana</td>
+<td style="text-align: left;">10 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">1.010</td>
+<td style="text-align: right;">-45.235</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Haiti</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">2.296</td>
+<td style="text-align: right;">2.714</td>
+<td style="text-align: right;">-15.409</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Honduras</td>
+<td style="text-align: left;">21 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">7.390</td>
+<td style="text-align: right;">8.036</td>
+<td style="text-align: right;">-8.042</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Hungary</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">41.344</td>
+<td style="text-align: right;">46.422</td>
+<td style="text-align: right;">-10.939</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Iceland</td>
+<td style="text-align: left;">15 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">6.847</td>
+<td style="text-align: right;">6.403</td>
+<td style="text-align: right;">6.935</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Indonesia</td>
+<td style="text-align: left;">1 Nov 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">159.246</td>
+<td style="text-align: right;">155.708</td>
+<td style="text-align: right;">2.272</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Iraq</td>
+<td style="text-align: left;">25 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">100.000</td>
+<td style="text-align: right;">100.691</td>
+<td style="text-align: right;">-0.686</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Ireland</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">12.599</td>
+<td style="text-align: right;">12.698</td>
+<td style="text-align: right;">-0.780</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Israel</td>
+<td style="text-align: left;">6 Oct 2025</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">231.880</td>
+<td style="text-align: right;">229.487</td>
+<td style="text-align: right;">1.043</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Italy</td>
+<td style="text-align: left;">1 Nov 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">279.631</td>
+<td style="text-align: right;">290.547</td>
+<td style="text-align: right;">-3.757</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Jamaica</td>
+<td style="text-align: left;">5 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">4.921</td>
+<td style="text-align: right;">5.633</td>
+<td style="text-align: right;">-12.638</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Jordan</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">18.765</td>
+<td style="text-align: right;">21.939</td>
+<td style="text-align: right;">-14.468</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Kazakhstan</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">34.500</td>
+<td style="text-align: right;">45.808</td>
+<td style="text-align: right;">-24.685</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Kenya</td>
+<td style="text-align: left;">5 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">2.490</td>
+<td style="text-align: right;">10.067</td>
+<td style="text-align: right;">-75.265</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Kosovo</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.950</td>
+<td style="text-align: right;">1.310</td>
+<td style="text-align: right;">-27.486</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Kuwait</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">46.420</td>
+<td style="text-align: right;">50.728</td>
+<td style="text-align: right;">-8.492</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Kyrgyzstan</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">2.976</td>
+<td style="text-align: right;">5.089</td>
+<td style="text-align: right;">-41.518</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Laos</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">1.099</td>
+<td style="text-align: right;">2.213</td>
+<td style="text-align: right;">-50.339</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Latvia</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">3.913</td>
+<td style="text-align: right;">5.141</td>
+<td style="text-align: right;">-23.884</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Lebanon</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">14.738</td>
+<td style="text-align: right;">33.301</td>
+<td style="text-align: right;">-55.743</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Lesotho</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.785</td>
+<td style="text-align: right;">1.008</td>
+<td style="text-align: right;">-22.112</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Liberia</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.342</td>
+<td style="text-align: right;">0.368</td>
+<td style="text-align: right;">-6.992</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Libya</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">70.524</td>
+<td style="text-align: right;">92.894</td>
+<td style="text-align: right;">-24.081</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Lithuania</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">4.900</td>
+<td style="text-align: right;">7.407</td>
+<td style="text-align: right;">-33.847</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Luxembourg</td>
+<td style="text-align: left;">5 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">1.119</td>
+<td style="text-align: right;">2.789</td>
+<td style="text-align: right;">-59.881</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Macau</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">24.283</td>
+<td style="text-align: right;">29.392</td>
+<td style="text-align: right;">-17.382</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Madagascar</td>
+<td style="text-align: left;">19 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">1.620</td>
+<td style="text-align: right;">2.785</td>
+<td style="text-align: right;">-41.823</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Malaysia</td>
+<td style="text-align: left;">1 Oct 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">119.700</td>
+<td style="text-align: right;">116.229</td>
+<td style="text-align: right;">2.986</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Malta</td>
+<td style="text-align: left;">20 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.937</td>
+<td style="text-align: right;">1.418</td>
+<td style="text-align: right;">-33.903</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Mauritius</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">5.591</td>
+<td style="text-align: right;">8.506</td>
+<td style="text-align: right;">-34.271</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Moldova</td>
+<td style="text-align: left;">30 Aug 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">5.600</td>
+<td style="text-align: right;">5.484</td>
+<td style="text-align: right;">2.124</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Mongolia</td>
+<td style="text-align: left;">20 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">5.120</td>
+<td style="text-align: right;">5.508</td>
+<td style="text-align: right;">-7.043</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Montenegro</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">1.558</td>
+<td style="text-align: right;">1.741</td>
+<td style="text-align: right;">-10.537</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Morocco</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">32.037</td>
+<td style="text-align: right;">37.134</td>
+<td style="text-align: right;">-13.726</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Namibia</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">2.019</td>
+<td style="text-align: right;">3.356</td>
+<td style="text-align: right;">-39.831</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Nepal</td>
+<td style="text-align: left;">11 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">18.400</td>
+<td style="text-align: right;">15.847</td>
+<td style="text-align: right;">16.112</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Netherlands</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">125.451</td>
+<td style="text-align: right;">79.130</td>
+<td style="text-align: right;">58.539</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">New Zealand</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">31.712</td>
+<td style="text-align: right;">22.065</td>
+<td style="text-align: right;">43.720</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Nicaragua</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">3.980</td>
+<td style="text-align: right;">6.105</td>
+<td style="text-align: right;">-34.806</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Nigeria</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">34.980</td>
+<td style="text-align: right;">40.406</td>
+<td style="text-align: right;">-13.429</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">North Macedonia</td>
+<td style="text-align: left;">31 Aug 2025</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">0.004</td>
+<td style="text-align: right;">5.804</td>
+<td style="text-align: right;">-99.931</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Norway</td>
+<td style="text-align: left;">1 Oct 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">80.110</td>
+<td style="text-align: right;">81.242</td>
+<td style="text-align: right;">-1.393</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Oman</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">16.163</td>
+<td style="text-align: right;">18.287</td>
+<td style="text-align: right;">-11.613</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Palestine</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.671</td>
+<td style="text-align: right;">1.328</td>
+<td style="text-align: right;">-49.473</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Panama</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">6.143</td>
+<td style="text-align: right;">6.856</td>
+<td style="text-align: right;">-10.393</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Papua New Guinea</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">2.339</td>
+<td style="text-align: right;">3.709</td>
+<td style="text-align: right;">-36.936</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Paraguay</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">9.707</td>
+<td style="text-align: right;">9.568</td>
+<td style="text-align: right;">1.456</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Peru</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">73.483</td>
+<td style="text-align: right;">79.246</td>
+<td style="text-align: right;">-7.272</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Philippines</td>
+<td style="text-align: left;">1 Nov 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">112.434</td>
+<td style="text-align: right;">106.195</td>
+<td style="text-align: right;">5.875</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Poland</td>
+<td style="text-align: left;">7 Jan 2025</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">223.200</td>
+<td style="text-align: right;">271.805</td>
+<td style="text-align: right;">-17.882</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Portugal</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">53.710</td>
+<td style="text-align: right;">42.434</td>
+<td style="text-align: right;">26.572</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Qatar</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">64.560</td>
+<td style="text-align: right;">53.987</td>
+<td style="text-align: right;">19.583</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Republic of the Congo</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.443</td>
+<td style="text-align: right;">0.759</td>
+<td style="text-align: right;">-41.599</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Rwanda</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">1.458</td>
+<td style="text-align: right;">2.406</td>
+<td style="text-align: right;">-39.413</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Saint Kitts and Nevis</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.365</td>
+<td style="text-align: right;">0.295</td>
+<td style="text-align: right;">23.835</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Saint Lucia</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.258</td>
+<td style="text-align: right;">0.406</td>
+<td style="text-align: right;">-36.463</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Saint Vincent and the Grenadines</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.192</td>
+<td style="text-align: right;">0.317</td>
+<td style="text-align: right;">-39.399</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Samoa</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.188</td>
+<td style="text-align: right;">0.508</td>
+<td style="text-align: right;">-62.973</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">San Marino</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.716</td>
+<td style="text-align: right;">0.759</td>
+<td style="text-align: right;">-5.658</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Seychelles</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.546</td>
+<td style="text-align: right;">0.774</td>
+<td style="text-align: right;">-29.428</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Sierra Leone</td>
+<td style="text-align: left;">2 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.624</td>
+<td style="text-align: right;">0.433</td>
+<td style="text-align: right;">44.021</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Slovakia</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">7.650</td>
+<td style="text-align: right;">14.452</td>
+<td style="text-align: right;">-47.066</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Slovenia</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">2.519</td>
+<td style="text-align: right;">2.832</td>
+<td style="text-align: right;">-11.063</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Solomon Islands</td>
+<td style="text-align: left;">8 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.551</td>
+<td style="text-align: right;">0.686</td>
+<td style="text-align: right;">-19.657</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">South Africa</td>
+<td style="text-align: left;">31 Mar 2025</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">67.450</td>
+<td style="text-align: right;">76.023</td>
+<td style="text-align: right;">-11.277</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">South Sudan</td>
+<td style="text-align: left;">2 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.080</td>
+<td style="text-align: right;">0.016</td>
+<td style="text-align: right;">401.197</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Spain</td>
+<td style="text-align: left;">1 Nov 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">100.983</td>
+<td style="text-align: right;">107.774</td>
+<td style="text-align: right;">-6.301</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Sri Lanka</td>
+<td style="text-align: left;">31 Oct 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">6.467</td>
+<td style="text-align: right;">6.094</td>
+<td style="text-align: right;">6.122</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Suriname</td>
+<td style="text-align: left;">8 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.647</td>
+<td style="text-align: right;">1.632</td>
+<td style="text-align: right;">-60.363</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Sweden</td>
+<td style="text-align: left;">7 Nov 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">62.438</td>
+<td style="text-align: right;">62.569</td>
+<td style="text-align: right;">-0.210</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">São Tomé and Príncipe</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.186</td>
+<td style="text-align: right;">0.059</td>
+<td style="text-align: right;">216.394</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Tajikistan</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">1.482</td>
+<td style="text-align: right;">3.631</td>
+<td style="text-align: right;">-59.182</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Timor-Leste</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.654</td>
+<td style="text-align: right;">0.779</td>
+<td style="text-align: right;">-16.048</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Tonga</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.226</td>
+<td style="text-align: right;">0.377</td>
+<td style="text-align: right;">-40.101</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Trinidad and Tobago</td>
+<td style="text-align: left;">18 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">5.800</td>
+<td style="text-align: right;">5.601</td>
+<td style="text-align: right;">3.551</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Tunisia</td>
+<td style="text-align: left;">21 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">8.623</td>
+<td style="text-align: right;">9.344</td>
+<td style="text-align: right;">-7.712</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Uganda</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">3.700</td>
+<td style="text-align: right;">3.483</td>
+<td style="text-align: right;">6.233</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Ukraine</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">40.507</td>
+<td style="text-align: right;">43.781</td>
+<td style="text-align: right;">-7.477</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">United Arab Emirates</td>
+<td style="text-align: left;">1 Nov 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">210.000</td>
+<td style="text-align: right;">237.931</td>
+<td style="text-align: right;">-11.739</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">United Kingdom</td>
+<td style="text-align: left;">1 Nov 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">189.228</td>
+<td style="text-align: right;">174.598</td>
+<td style="text-align: right;">8.379</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">United States</td>
+<td style="text-align: left;">22 Aug 2025</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">253.767</td>
+<td style="text-align: right;">1385.447</td>
+<td style="text-align: right;">-81.683</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Uruguay</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">15.449</td>
+<td style="text-align: right;">17.378</td>
+<td style="text-align: right;">-11.099</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Uzbekistan</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">32.195</td>
+<td style="text-align: right;">41.237</td>
+<td style="text-align: right;">-21.927</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Vanuatu</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.509</td>
+<td style="text-align: right;">0.615</td>
+<td style="text-align: right;">-17.189</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Vietnam</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">93.342</td>
+<td style="text-align: right;">83.082</td>
+<td style="text-align: right;">12.349</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Zimbabwe</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.159</td>
+<td style="text-align: right;">0.485</td>
+<td style="text-align: right;">-67.215</td>
+</tr>
+</tbody>
+</table>
+</div>
+<details class="code-fold">
+<summary>Show R code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">format_comparison</span>(latest_valid), <span class="at">digits =</span> <span class="dv">3</span>,</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>             <span class="at">caption =</span> <span class="st">"All valid latest-available pairs."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top">
+<caption>All valid latest-available pairs.</caption>
+<colgroup>
+<col style="width: 32%">
+<col style="width: 16%">
+<col style="width: 8%">
+<col style="width: 13%">
+<col style="width: 12%">
+<col style="width: 14%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Economy</th>
+<th style="text-align: left;">Wiki date</th>
+<th style="text-align: right;">WDI year</th>
+<th style="text-align: right;">Wiki (USD bn)</th>
+<th style="text-align: right;">WDI (USD bn)</th>
+<th style="text-align: right;">Difference (%)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Afghanistan</td>
+<td style="text-align: left;">1 Oct 2024</td>
+<td style="text-align: right;">2020</td>
+<td style="text-align: right;">0.443</td>
+<td style="text-align: right;">9.749</td>
+<td style="text-align: right;">-95.456</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Albania</td>
+<td style="text-align: left;">31 Apr 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">5.290</td>
+<td style="text-align: right;">8.602</td>
+<td style="text-align: right;">-38.500</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Algeria</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">68.028</td>
+<td style="text-align: right;">76.825</td>
+<td style="text-align: right;">-11.451</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Angola</td>
+<td style="text-align: left;">15 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">14.200</td>
+<td style="text-align: right;">13.536</td>
+<td style="text-align: right;">4.905</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Antigua and Barbuda</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">0.285</td>
+<td style="text-align: right;">0.379</td>
+<td style="text-align: right;">-24.707</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Argentina</td>
+<td style="text-align: left;">1 Jun 2026</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">36.625</td>
+<td style="text-align: right;">40.999</td>
+<td style="text-align: right;">-10.668</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Armenia</td>
+<td style="text-align: left;">25 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">4.298</td>
+<td style="text-align: right;">5.088</td>
+<td style="text-align: right;">-15.531</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Aruba</td>
+<td style="text-align: left;">15 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">1.017</td>
+<td style="text-align: right;">2.231</td>
+<td style="text-align: right;">-54.424</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Australia</td>
+<td style="text-align: left;">7 Nov 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">65.018</td>
+<td style="text-align: right;">72.633</td>
+<td style="text-align: right;">-10.484</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Austria</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">34.856</td>
+<td style="text-align: right;">53.437</td>
+<td style="text-align: right;">-34.772</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Azerbaijan</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">11.650</td>
+<td style="text-align: right;">13.556</td>
+<td style="text-align: right;">-14.059</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Bahamas</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">1.758</td>
+<td style="text-align: right;">2.814</td>
+<td style="text-align: right;">-37.517</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Bahrain</td>
+<td style="text-align: left;">25 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">5.500</td>
+<td style="text-align: right;">5.270</td>
+<td style="text-align: right;">4.368</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Bangladesh</td>
+<td style="text-align: left;">03 Jul 2026</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">37.660</td>
+<td style="text-align: right;">28.563</td>
+<td style="text-align: right;">31.851</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Barbados</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.770</td>
+<td style="text-align: right;">1.654</td>
+<td style="text-align: right;">-53.437</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Belarus</td>
+<td style="text-align: left;">31 Aug 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">8.697</td>
+<td style="text-align: right;">14.520</td>
+<td style="text-align: right;">-40.103</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Belgium</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">82.000</td>
+<td style="text-align: right;">56.393</td>
+<td style="text-align: right;">45.409</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Belize</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">0.281</td>
+<td style="text-align: right;">0.559</td>
+<td style="text-align: right;">-49.770</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Bhutan</td>
+<td style="text-align: left;">10 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">0.972</td>
+<td style="text-align: right;">1.194</td>
+<td style="text-align: right;">-18.580</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Bolivia</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">1.769</td>
+<td style="text-align: right;">0.580</td>
+<td style="text-align: right;">205.049</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Bosnia and Herzegovina</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">8.711</td>
+<td style="text-align: right;">9.419</td>
+<td style="text-align: right;">-7.515</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Botswana</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">5.080</td>
+<td style="text-align: right;">3.456</td>
+<td style="text-align: right;">47.005</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Brazil</td>
+<td style="text-align: left;">30 Apr 2026</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">366.913</td>
+<td style="text-align: right;">358.513</td>
+<td style="text-align: right;">2.343</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Brunei</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">3.664</td>
+<td style="text-align: right;">5.489</td>
+<td style="text-align: right;">-33.244</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Bulgaria</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">35.395</td>
+<td style="text-align: right;">47.145</td>
+<td style="text-align: right;">-24.924</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Burundi</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2023</td>
+<td style="text-align: right;">0.105</td>
+<td style="text-align: right;">0.090</td>
+<td style="text-align: right;">16.215</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Cambodia</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">18.496</td>
+<td style="text-align: right;">27.524</td>
+<td style="text-align: right;">-32.802</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Cameroon</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">3.459</td>
+<td style="text-align: right;">5.062</td>
+<td style="text-align: right;">-31.661</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Canada</td>
+<td style="text-align: left;">1 Nov 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">123.084</td>
+<td style="text-align: right;">125.627</td>
+<td style="text-align: right;">-2.024</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Cape Verde</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">0.712</td>
+<td style="text-align: right;">1.259</td>
+<td style="text-align: right;">-43.443</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Central African Republic</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.375</td>
+<td style="text-align: right;">0.489</td>
+<td style="text-align: right;">-23.358</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Chad</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.143</td>
+<td style="text-align: right;">1.548</td>
+<td style="text-align: right;">-90.760</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Chile</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">42.527</td>
+<td style="text-align: right;">49.450</td>
+<td style="text-align: right;">-14.000</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">China</td>
+<td style="text-align: left;">1 Aug 2026</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">3854.885</td>
+<td style="text-align: right;">3748.745</td>
+<td style="text-align: right;">2.831</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Colombia</td>
+<td style="text-align: left;">8 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">57.269</td>
+<td style="text-align: right;">65.806</td>
+<td style="text-align: right;">-12.973</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Comoros</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">0.197</td>
+<td style="text-align: right;">0.409</td>
+<td style="text-align: right;">-51.842</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Costa Rica</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">13.200</td>
+<td style="text-align: right;">17.086</td>
+<td style="text-align: right;">-22.746</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Croatia</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">2.935</td>
+<td style="text-align: right;">4.216</td>
+<td style="text-align: right;">-30.388</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Cyprus</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">1.271</td>
+<td style="text-align: right;">2.948</td>
+<td style="text-align: right;">-56.880</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Czech Republic</td>
+<td style="text-align: left;">1 Nov 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">149.416</td>
+<td style="text-align: right;">176.326</td>
+<td style="text-align: right;">-15.261</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Democratic Republic of the Congo</td>
+<td style="text-align: left;">14 Mar 2024</td>
+<td style="text-align: right;">2023</td>
+<td style="text-align: right;">0.505</td>
+<td style="text-align: right;">5.104</td>
+<td style="text-align: right;">-90.106</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Denmark</td>
+<td style="text-align: left;">1 Nov 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">93.196</td>
+<td style="text-align: right;">127.756</td>
+<td style="text-align: right;">-27.052</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Djibouti</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">0.504</td>
+<td style="text-align: right;">0.656</td>
+<td style="text-align: right;">-23.141</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Dominica</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">0.168</td>
+<td style="text-align: right;">0.165</td>
+<td style="text-align: right;">2.011</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Dominican Republic</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">14.371</td>
+<td style="text-align: right;">14.779</td>
+<td style="text-align: right;">-2.762</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Ecuador</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">3.305</td>
+<td style="text-align: right;">9.798</td>
+<td style="text-align: right;">-66.268</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Egypt</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">35.310</td>
+<td style="text-align: right;">48.875</td>
+<td style="text-align: right;">-27.755</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">El Salvador</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">2.510</td>
+<td style="text-align: right;">4.816</td>
+<td style="text-align: right;">-47.886</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Equatorial Guinea</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.046</td>
+<td style="text-align: right;">1.077</td>
+<td style="text-align: right;">-95.728</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Eritrea</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2019</td>
+<td style="text-align: right;">0.189</td>
+<td style="text-align: right;">0.192</td>
+<td style="text-align: right;">-1.406</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Estonia</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">2.065</td>
+<td style="text-align: right;">2.439</td>
+<td style="text-align: right;">-15.328</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Eswatini</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.467</td>
+<td style="text-align: right;">0.537</td>
+<td style="text-align: right;">-12.966</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Ethiopia</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">3.430</td>
+<td style="text-align: right;">3.784</td>
+<td style="text-align: right;">-9.364</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Federated States of Micronesia</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2021</td>
+<td style="text-align: right;">0.395</td>
+<td style="text-align: right;">0.497</td>
+<td style="text-align: right;">-20.592</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Fiji</td>
+<td style="text-align: left;">5 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">1.065</td>
+<td style="text-align: right;">1.659</td>
+<td style="text-align: right;">-35.801</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Finland</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">7.995</td>
+<td style="text-align: right;">22.457</td>
+<td style="text-align: right;">-64.399</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">France</td>
+<td style="text-align: left;">1 Nov 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">272.693</td>
+<td style="text-align: right;">428.208</td>
+<td style="text-align: right;">-36.318</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Gabon</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">1.377</td>
+<td style="text-align: right;">0.639</td>
+<td style="text-align: right;">115.564</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Gambia</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.698</td>
+<td style="text-align: right;">0.629</td>
+<td style="text-align: right;">10.996</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Georgia</td>
+<td style="text-align: left;">25 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">5.224</td>
+<td style="text-align: right;">6.157</td>
+<td style="text-align: right;">-15.156</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Germany</td>
+<td style="text-align: left;">1 Oct 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">345.338</td>
+<td style="text-align: right;">572.202</td>
+<td style="text-align: right;">-39.648</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Ghana</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">3.368</td>
+<td style="text-align: right;">12.125</td>
+<td style="text-align: right;">-72.223</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Greece</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">3.926</td>
+<td style="text-align: right;">24.048</td>
+<td style="text-align: right;">-83.674</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Grenada</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">0.247</td>
+<td style="text-align: right;">0.408</td>
+<td style="text-align: right;">-39.483</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Guatemala</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">21.390</td>
+<td style="text-align: right;">32.754</td>
+<td style="text-align: right;">-34.694</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Guinea</td>
+<td style="text-align: left;">15 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">1.425</td>
+<td style="text-align: right;">1.346</td>
+<td style="text-align: right;">5.901</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Guyana</td>
+<td style="text-align: left;">10 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">1.356</td>
+<td style="text-align: right;">-59.225</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Haiti</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">2.296</td>
+<td style="text-align: right;">3.394</td>
+<td style="text-align: right;">-32.350</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Honduras</td>
+<td style="text-align: left;">21 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">7.390</td>
+<td style="text-align: right;">10.204</td>
+<td style="text-align: right;">-27.579</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Hong Kong</td>
+<td style="text-align: left;">30 June 2026</td>
+<td style="text-align: right;">2023</td>
+<td style="text-align: right;">445.900</td>
+<td style="text-align: right;">425.554</td>
+<td style="text-align: right;">4.781</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Hungary</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">41.344</td>
+<td style="text-align: right;">59.095</td>
+<td style="text-align: right;">-30.038</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Iceland</td>
+<td style="text-align: left;">15 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">6.847</td>
+<td style="text-align: right;">7.732</td>
+<td style="text-align: right;">-11.448</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">India</td>
+<td style="text-align: left;">20 Nov 2026</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">705.342</td>
+<td style="text-align: right;">700.074</td>
+<td style="text-align: right;">0.753</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Indonesia</td>
+<td style="text-align: left;">1 Nov 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">159.246</td>
+<td style="text-align: right;">156.543</td>
+<td style="text-align: right;">1.727</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Iraq</td>
+<td style="text-align: left;">25 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">100.000</td>
+<td style="text-align: right;">98.450</td>
+<td style="text-align: right;">1.574</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Ireland</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">12.599</td>
+<td style="text-align: right;">13.659</td>
+<td style="text-align: right;">-7.763</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Israel</td>
+<td style="text-align: left;">6 Oct 2025</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">231.880</td>
+<td style="text-align: right;">229.487</td>
+<td style="text-align: right;">1.043</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Italy</td>
+<td style="text-align: left;">1 Nov 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">279.631</td>
+<td style="text-align: right;">434.015</td>
+<td style="text-align: right;">-35.571</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Jamaica</td>
+<td style="text-align: left;">5 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">4.921</td>
+<td style="text-align: right;">6.303</td>
+<td style="text-align: right;">-21.928</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Japan</td>
+<td style="text-align: left;">30 June 2026</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">1287.470</td>
+<td style="text-align: right;">1371.402</td>
+<td style="text-align: right;">-6.120</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Jordan</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">18.765</td>
+<td style="text-align: right;">26.557</td>
+<td style="text-align: right;">-29.342</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Kazakhstan</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">34.500</td>
+<td style="text-align: right;">66.069</td>
+<td style="text-align: right;">-47.782</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Kenya</td>
+<td style="text-align: left;">5 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">2.490</td>
+<td style="text-align: right;">12.394</td>
+<td style="text-align: right;">-79.910</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Kosovo</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">0.950</td>
+<td style="text-align: right;">1.516</td>
+<td style="text-align: right;">-37.341</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Kuwait</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">46.420</td>
+<td style="text-align: right;">51.738</td>
+<td style="text-align: right;">-10.279</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Kyrgyzstan</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">2.976</td>
+<td style="text-align: right;">8.603</td>
+<td style="text-align: right;">-65.409</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Laos</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">1.099</td>
+<td style="text-align: right;">3.714</td>
+<td style="text-align: right;">-70.412</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Latvia</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">3.913</td>
+<td style="text-align: right;">6.099</td>
+<td style="text-align: right;">-35.846</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Lebanon</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">14.738</td>
+<td style="text-align: right;">33.301</td>
+<td style="text-align: right;">-55.743</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Lesotho</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.785</td>
+<td style="text-align: right;">1.008</td>
+<td style="text-align: right;">-22.112</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Liberia</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">0.342</td>
+<td style="text-align: right;">0.339</td>
+<td style="text-align: right;">0.944</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Libya</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">70.524</td>
+<td style="text-align: right;">104.657</td>
+<td style="text-align: right;">-32.614</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Lithuania</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">4.900</td>
+<td style="text-align: right;">7.059</td>
+<td style="text-align: right;">-30.586</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Luxembourg</td>
+<td style="text-align: left;">5 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">1.119</td>
+<td style="text-align: right;">3.055</td>
+<td style="text-align: right;">-63.374</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Macau</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">24.283</td>
+<td style="text-align: right;">30.638</td>
+<td style="text-align: right;">-20.742</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Madagascar</td>
+<td style="text-align: left;">19 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">1.620</td>
+<td style="text-align: right;">2.785</td>
+<td style="text-align: right;">-41.823</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Malawi</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2020</td>
+<td style="text-align: right;">0.488</td>
+<td style="text-align: right;">0.594</td>
+<td style="text-align: right;">-17.914</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Malaysia</td>
+<td style="text-align: left;">1 Oct 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">119.700</td>
+<td style="text-align: right;">125.629</td>
+<td style="text-align: right;">-4.720</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Maldives</td>
+<td style="text-align: left;">1 September 2026</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">0.644</td>
+<td style="text-align: right;">0.985</td>
+<td style="text-align: right;">-34.591</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Malta</td>
+<td style="text-align: left;">20 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">0.937</td>
+<td style="text-align: right;">1.544</td>
+<td style="text-align: right;">-39.294</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Mauritania</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2021</td>
+<td style="text-align: right;">1.493</td>
+<td style="text-align: right;">2.039</td>
+<td style="text-align: right;">-26.762</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Mauritius</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">5.591</td>
+<td style="text-align: right;">10.308</td>
+<td style="text-align: right;">-45.761</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Mexico</td>
+<td style="text-align: left;">30 Jan 2026</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">255.605</td>
+<td style="text-align: right;">256.179</td>
+<td style="text-align: right;">-0.224</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Moldova</td>
+<td style="text-align: left;">30 Aug 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">5.600</td>
+<td style="text-align: right;">6.006</td>
+<td style="text-align: right;">-6.762</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Mongolia</td>
+<td style="text-align: left;">20 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">5.120</td>
+<td style="text-align: right;">7.004</td>
+<td style="text-align: right;">-26.900</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Montenegro</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">1.558</td>
+<td style="text-align: right;">2.196</td>
+<td style="text-align: right;">-29.065</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Morocco</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">32.037</td>
+<td style="text-align: right;">48.454</td>
+<td style="text-align: right;">-33.881</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Mozambique</td>
+<td style="text-align: left;">31 Jul 2025</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.004</td>
+<td style="text-align: right;">3.843</td>
+<td style="text-align: right;">-99.896</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Myanmar</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2023</td>
+<td style="text-align: right;">6.700</td>
+<td style="text-align: right;">9.338</td>
+<td style="text-align: right;">-28.249</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Namibia</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">2.019</td>
+<td style="text-align: right;">3.105</td>
+<td style="text-align: right;">-34.966</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Nepal</td>
+<td style="text-align: left;">11 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">18.400</td>
+<td style="text-align: right;">21.100</td>
+<td style="text-align: right;">-12.798</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Netherlands</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">125.451</td>
+<td style="text-align: right;">118.057</td>
+<td style="text-align: right;">6.263</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">New Zealand</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">31.712</td>
+<td style="text-align: right;">28.152</td>
+<td style="text-align: right;">12.644</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Nicaragua</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">3.980</td>
+<td style="text-align: right;">8.324</td>
+<td style="text-align: right;">-52.189</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Nigeria</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">34.980</td>
+<td style="text-align: right;">46.025</td>
+<td style="text-align: right;">-23.998</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">North Macedonia</td>
+<td style="text-align: left;">31 Aug 2025</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">0.004</td>
+<td style="text-align: right;">5.804</td>
+<td style="text-align: right;">-99.931</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Norway</td>
+<td style="text-align: left;">1 Oct 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">80.110</td>
+<td style="text-align: right;">85.495</td>
+<td style="text-align: right;">-6.298</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Oman</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">16.163</td>
+<td style="text-align: right;">18.287</td>
+<td style="text-align: right;">-11.613</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Pakistan</td>
+<td style="text-align: left;">19 Sep 2026</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">26.791</td>
+<td style="text-align: right;">26.456</td>
+<td style="text-align: right;">1.267</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Palestine</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">0.671</td>
+<td style="text-align: right;">1.825</td>
+<td style="text-align: right;">-63.237</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Panama</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">6.143</td>
+<td style="text-align: right;">6.241</td>
+<td style="text-align: right;">-1.566</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Papua New Guinea</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">2.339</td>
+<td style="text-align: right;">3.709</td>
+<td style="text-align: right;">-36.936</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Paraguay</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">9.707</td>
+<td style="text-align: right;">9.568</td>
+<td style="text-align: right;">1.456</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Peru</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">73.483</td>
+<td style="text-align: right;">90.394</td>
+<td style="text-align: right;">-18.708</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Philippines</td>
+<td style="text-align: left;">1 Nov 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">112.434</td>
+<td style="text-align: right;">110.929</td>
+<td style="text-align: right;">1.357</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Poland</td>
+<td style="text-align: left;">7 Jan 2025</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">223.200</td>
+<td style="text-align: right;">271.805</td>
+<td style="text-align: right;">-17.882</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Portugal</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">53.710</td>
+<td style="text-align: right;">68.839</td>
+<td style="text-align: right;">-21.978</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Qatar</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">64.560</td>
+<td style="text-align: right;">55.847</td>
+<td style="text-align: right;">15.601</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Republic of the Congo</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.443</td>
+<td style="text-align: right;">0.759</td>
+<td style="text-align: right;">-41.599</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Romania</td>
+<td style="text-align: left;">31 Jan 2026</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">95.127</td>
+<td style="text-align: right;">90.648</td>
+<td style="text-align: right;">4.941</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Russia</td>
+<td style="text-align: left;">20 Nov 2026</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">699.400</td>
+<td style="text-align: right;">608.361</td>
+<td style="text-align: right;">14.965</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Rwanda</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">1.458</td>
+<td style="text-align: right;">1.963</td>
+<td style="text-align: right;">-25.713</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Saint Kitts and Nevis</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">0.365</td>
+<td style="text-align: right;">0.282</td>
+<td style="text-align: right;">29.409</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Saint Lucia</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">0.258</td>
+<td style="text-align: right;">0.447</td>
+<td style="text-align: right;">-42.301</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Saint Vincent and the Grenadines</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">0.192</td>
+<td style="text-align: right;">0.281</td>
+<td style="text-align: right;">-31.726</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Samoa</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">0.188</td>
+<td style="text-align: right;">0.598</td>
+<td style="text-align: right;">-68.580</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">San Marino</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">0.716</td>
+<td style="text-align: right;">0.861</td>
+<td style="text-align: right;">-16.864</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Saudi Arabia</td>
+<td style="text-align: left;">31 May 2026</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">487.370</td>
+<td style="text-align: right;">505.164</td>
+<td style="text-align: right;">-3.522</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Serbia</td>
+<td style="text-align: left;">11 Sept 2026</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">35.770</td>
+<td style="text-align: right;">34.151</td>
+<td style="text-align: right;">4.741</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Seychelles</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.546</td>
+<td style="text-align: right;">0.774</td>
+<td style="text-align: right;">-29.428</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Sierra Leone</td>
+<td style="text-align: left;">2 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.624</td>
+<td style="text-align: right;">0.433</td>
+<td style="text-align: right;">44.021</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Singapore</td>
+<td style="text-align: left;">30 June 2026</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">426.830</td>
+<td style="text-align: right;">432.114</td>
+<td style="text-align: right;">-1.223</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Slovakia</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">7.650</td>
+<td style="text-align: right;">18.162</td>
+<td style="text-align: right;">-57.879</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Slovenia</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">2.519</td>
+<td style="text-align: right;">3.550</td>
+<td style="text-align: right;">-29.039</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Solomon Islands</td>
+<td style="text-align: left;">8 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.551</td>
+<td style="text-align: right;">0.686</td>
+<td style="text-align: right;">-19.657</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">South Africa</td>
+<td style="text-align: left;">31 Mar 2025</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">67.450</td>
+<td style="text-align: right;">76.023</td>
+<td style="text-align: right;">-11.277</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">South Korea</td>
+<td style="text-align: left;">30 June 2026</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">427.400</td>
+<td style="text-align: right;">436.573</td>
+<td style="text-align: right;">-2.101</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">South Sudan</td>
+<td style="text-align: left;">2 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.080</td>
+<td style="text-align: right;">0.016</td>
+<td style="text-align: right;">401.197</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Spain</td>
+<td style="text-align: left;">1 Nov 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">100.983</td>
+<td style="text-align: right;">128.593</td>
+<td style="text-align: right;">-21.471</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Sri Lanka</td>
+<td style="text-align: left;">31 Oct 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">6.467</td>
+<td style="text-align: right;">6.094</td>
+<td style="text-align: right;">6.122</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Sudan</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2017</td>
+<td style="text-align: right;">0.172</td>
+<td style="text-align: right;">0.178</td>
+<td style="text-align: right;">-3.335</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Suriname</td>
+<td style="text-align: left;">8 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">0.647</td>
+<td style="text-align: right;">1.616</td>
+<td style="text-align: right;">-59.957</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Sweden</td>
+<td style="text-align: left;">7 Nov 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">62.438</td>
+<td style="text-align: right;">74.195</td>
+<td style="text-align: right;">-15.846</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Switzerland</td>
+<td style="text-align: left;">30 June 2026</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">939.140</td>
+<td style="text-align: right;">1075.680</td>
+<td style="text-align: right;">-12.693</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">São Tomé and Príncipe</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.186</td>
+<td style="text-align: right;">0.059</td>
+<td style="text-align: right;">216.394</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Tajikistan</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">1.482</td>
+<td style="text-align: right;">4.310</td>
+<td style="text-align: right;">-65.615</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Tanzania</td>
+<td style="text-align: left;">22 Mar 2024</td>
+<td style="text-align: right;">2018</td>
+<td style="text-align: right;">7.022</td>
+<td style="text-align: right;">5.050</td>
+<td style="text-align: right;">39.059</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Thailand</td>
+<td style="text-align: left;">1 Jul 2026</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">300.180</td>
+<td style="text-align: right;">282.261</td>
+<td style="text-align: right;">6.348</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Timor-Leste</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">0.654</td>
+<td style="text-align: right;">0.806</td>
+<td style="text-align: right;">-18.887</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Tonga</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">0.226</td>
+<td style="text-align: right;">0.413</td>
+<td style="text-align: right;">-45.241</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Trinidad and Tobago</td>
+<td style="text-align: left;">18 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">5.800</td>
+<td style="text-align: right;">5.372</td>
+<td style="text-align: right;">7.967</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Tunisia</td>
+<td style="text-align: left;">21 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">8.623</td>
+<td style="text-align: right;">9.344</td>
+<td style="text-align: right;">-7.712</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Turkey</td>
+<td style="text-align: left;">30 Jan 2026</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">218.158</td>
+<td style="text-align: right;">185.568</td>
+<td style="text-align: right;">17.562</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Uganda</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">3.700</td>
+<td style="text-align: right;">3.483</td>
+<td style="text-align: right;">6.233</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Ukraine</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">40.507</td>
+<td style="text-align: right;">57.268</td>
+<td style="text-align: right;">-29.268</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">United Arab Emirates</td>
+<td style="text-align: left;">1 Nov 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">210.000</td>
+<td style="text-align: right;">292.319</td>
+<td style="text-align: right;">-28.161</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">United Kingdom</td>
+<td style="text-align: left;">1 Nov 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">189.228</td>
+<td style="text-align: right;">214.355</td>
+<td style="text-align: right;">-11.722</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">United States</td>
+<td style="text-align: left;">22 Aug 2025</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">253.767</td>
+<td style="text-align: right;">1385.447</td>
+<td style="text-align: right;">-81.683</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Uruguay</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">15.449</td>
+<td style="text-align: right;">18.987</td>
+<td style="text-align: right;">-18.634</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Uzbekistan</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">32.195</td>
+<td style="text-align: right;">66.035</td>
+<td style="text-align: right;">-51.246</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Vanuatu</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.509</td>
+<td style="text-align: right;">0.615</td>
+<td style="text-align: right;">-17.189</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Venezuela</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2017</td>
+<td style="text-align: right;">5.908</td>
+<td style="text-align: right;">9.794</td>
+<td style="text-align: right;">-39.678</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Vietnam</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">93.342</td>
+<td style="text-align: right;">85.580</td>
+<td style="text-align: right;">9.069</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Yemen</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2022</td>
+<td style="text-align: right;">0.250</td>
+<td style="text-align: right;">1.251</td>
+<td style="text-align: right;">-80.013</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Zambia</td>
+<td style="text-align: left;">12 JUN 2026</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">6.500</td>
+<td style="text-align: right;">4.090</td>
+<td style="text-align: right;">58.931</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Zimbabwe</td>
+<td style="text-align: left;">1 Mar 2024</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">0.159</td>
+<td style="text-align: right;">0.485</td>
+<td style="text-align: right;">-67.215</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</blockquote>
+</div>
+<h2 id="research-data-plan-public-disclosures-of-cyber-espionage" class="anchored">4. Research Data Plan: Public Disclosures of Cyber Espionage</h2>
+<p><strong>Source and rationale.</strong> The proposed source is the <a href="https://www.cfr.org/cyber-operations/">Council on Foreign Relations Cyber Operations Tracker</a>, which catalogues publicly known suspected state-sponsored cyber operations since 2005. The research examines whether public disclosures of cyber espionage affect political trust. CFR provides incident classifications and attribution information, making it more directly relevant than an unclassified collection of cybersecurity news. It does not cover all incidents: publicly disclosed events are a selected subset, and its methodology describes attribution uncertainty and English-language reporting bias.</p>
+<p><strong>Permission and access.</strong> CFR’s <a href="https://www.cfr.org/terms-use">Terms of Use</a> provide free access but restrict certain uses and public or commercial redistribution of protected content. Access to the public site is not blanket permission to scrape or republish it. The current <a href="https://www.cfr.org/robots.txt">robots.txt</a> could not be independently retrieved during preparation of this plan, so permission for automated access is not established. Before making any automated request, the exact target path and host (including the download host) would be checked and the result archived. Any unclear use or redistribution rights would be clarified with CFR. No CFR pages are scraped in this assignment.</p>
+<p><strong>API and collection strategy.</strong> The tracker offers an official bulk download. No documented public API was identified on the tracker or in the reviewed materials. The official download is therefore the primary acquisition method; scraping would only be considered for essential missing fields, such as disclosure dates, if automated access and the intended use are permitted. Dates of occurrence and public disclosure would be coded separately; records without verified disclosure dates would be flagged rather than assigned arbitrary dates.</p>
+<p><strong>Volume, rate limiting and caching.</strong> The initial acquisition requires one official download, with quarterly checks for updates consistent with CFR’s stated update schedule. If approved supplemental page requests are necessary, only unmatched records would be visited, sequentially, at no more than one request every five seconds, using a descriptive user agent. HTTP 429 or 503 responses would trigger a pause and observance of <code>Retry-After</code>; repeated failures would stop collection. Original files, retrieval timestamps, URLs, checksums, variable definitions and data-processing code would be archived. Public release would be limited to materials authorized for redistribution.</p>
+<p><strong>Failure detection.</strong> Required fields, unique incident identifiers, date formats, country mappings and row counts would be tested before analysis. Changes in column names, missingness, duplicate records or unexpected changes in coverage would stop the workflow for manual review. New versions would be compared against earlier snapshots to identify revised attribution or dates, retaining both versions and a change log. A sample of disclosure dates would be checked against original public reports. Downstream models would use a frozen, documented snapshot rather than a continuously changing website.</p>
 
 
 <script id="quarto-html-after-body" type="application/javascript">

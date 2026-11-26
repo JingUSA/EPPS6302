@@ -1,10 +1,336 @@
 ---
-title: "Assignment 4: Web Scraping"
+title: "Assignment 4: Webscraping 1"
+execute:
+  echo: true
+  warning: false
+  message: false
+code-fold: true
+code-summary: "Show R code"
 ---
 
-::: {.assignment-report}
-# Assignment 4: Web Scraping
+**Web Scraping and API-Based Data Collection**  
+EPPS 6302 — Methods of Data Collection and Production | Fall 2026
 
-This assignment has not yet been completed.
+## 0. Permission and provenance
 
+Before fetching the target pages, `robotstxt::paths_allowed()` was run on November 26, 2026 (CST). All six initial paths (five sandbox pages and the reserves page) returned `TRUE` at 17:15:21. The Books to Scrape checks also generated missing-file, content-type and suspect-content warnings; thus the result is not evidence of a successfully retrieved robots file. The [sandbox](https://books.toscrape.com/) explicitly exists for scraping practice. The two Wikipedia target paths returned `TRUE`; an identifiable user agent was supplied for the page downloads. Robots directives do not substitute for terms of use or permission to redistribute content.
+
+| Source | Retrieval time (CST) |
+|:--|:--|
+| Books to Scrape, pages 1–5 | November 26, 2026, 17:16:39–17:16:48 |
+| Wikipedia, foreign-exchange reserves | November 26, 2026, 17:18:00 |
+| Wikipedia, internet usage | November 26, 2026, 17:19:26 |
+| World Bank WDI | November 26, 2026, 17:19:48 |
+
+Later permission checks were also archived. HTML and API responses are cached locally; rendering this page does not fetch any remote data.
+
+```{r}
+#| eval: false
+library(robotstxt)
+book_urls <- paste0("https://books.toscrape.com/catalogue/page-", 1:5, ".html")
+wiki_url <- "https://en.wikipedia.org/wiki/List_of_countries_by_foreign-exchange_reserves"
+internet_url <- "https://en.wikipedia.org/wiki/List_of_countries_by_number_of_internet_users"
+
+paths_allowed(c(book_urls, wiki_url))
+# Provide a real contact address locally; do not publish it in the script.
+wiki_agent <- paste0("EPPS6302Research/1.0 (", readline("Contact email: "), ")")
+paths_allowed(wiki_url, bot = "EPPS6302Research", user_agent = wiki_agent)
+paths_allowed(internet_url, bot = "EPPS6302Research", user_agent = wiki_agent)
+
+# After checking permission, cache each successful response once.
+cache_html <- function(url, path, agent, time_path) {
+  if (!file.exists(path)) {
+    Sys.sleep(2)
+    response <- httr::GET(url, httr::user_agent(agent), httr::timeout(60))
+    httr::stop_for_status(response)
+    writeBin(httr::content(response, as = "raw"), path)
+    writeLines(format(Sys.time(), tz = "America/Chicago", usetz = TRUE),
+               time_path)
+  }
+}
+data_dir <- "data/assignment04"
+dir.create(data_dir, recursive = TRUE, showWarnings = FALSE)
+# Use the sandbox's explicit invitation to practice scraping and check paths.
+stopifnot(all(paths_allowed(book_urls)))
+for (i in seq_along(book_urls)) {
+  cache_html(book_urls[i], file.path(data_dir, paste0("books_page_", i, ".html")),
+             wiki_agent, file.path(data_dir, paste0("books_page_", i, "_retrieval.txt")))
+}
+stopifnot(isTRUE(unname(paths_allowed(wiki_url, bot = "EPPS6302Research", user_agent = wiki_agent))))
+cache_html(wiki_url, file.path(data_dir, "wiki_reserves_raw.html"),
+           wiki_agent, file.path(data_dir, "wiki_reserves_retrieval.txt"))
+stopifnot(isTRUE(unname(paths_allowed(internet_url, bot = "EPPS6302Research", user_agent = wiki_agent))))
+cache_html(internet_url, file.path(data_dir, "wiki_internet_raw.html"),
+           wiki_agent, file.path(data_dir, "wiki_internet_retrieval.txt"))
+```
+
+## 1. Books to Scrape
+
+The first page was used to test extraction of the title, price and rating. The same selectors were then applied to five pages. All five contained 20 books, producing 100 rows with no missing values or duplicate titles. Prices are in pounds sterling; the ratings are ordinal categories, converted to integers from one to five.
+
+```{r}
+library(rvest)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(readr)
+data_dir <- "data/assignment04"
+
+scrape_books <- function(i) {
+  products <- read_html(file.path(data_dir, paste0("books_page_", i, ".html"))) |>
+    html_elements("article.product_pod")
+  tibble(
+    title = products |> html_element("h3 a") |> html_attr("title"),
+    price = products |> html_element("p.price_color") |> html_text2(),
+    rating = products |> html_element("p.star-rating") |>
+      html_attr("class") |> str_remove("star-rating "),
+    page = i,
+    source_url = paste0("https://books.toscrape.com/catalogue/page-", i, ".html")
+  ) |>
+    mutate(price_gbp = parse_number(price),
+           rating_numeric = match(rating, c("One","Two","Three","Four","Five")))
+}
+books_first <- scrape_books(1)
+books <- bind_rows(lapply(1:5, scrape_books))
+stopifnot(nrow(books) == 100, all(table(books$page) == 20),
+          !anyNA(books), !anyDuplicated(books$title))
+knitr::kable(head(books |> select(title, price_gbp, rating_numeric), 5),
+             col.names = c("Book title", "Price (GBP)", "Rating"))
+```
+
+```{r}
+#| tbl-cap: "Book prices and rating distribution."
+book_summary <- tibble(
+  Books = nrow(books), Pages = n_distinct(books$page),
+  `Minimum price (£)` = min(books$price_gbp),
+  `Median price (£)` = median(books$price_gbp),
+  `Mean price (£)` = mean(books$price_gbp),
+  `Maximum price (£)` = max(books$price_gbp)
+)
+knitr::kable(book_summary, digits = 2)
+knitr::kable(count(books, rating_numeric, name = "Books"),
+             col.names = c("Rating (stars)", "Books"))
+```
+
+## 2. Wikipedia tables and data cleaning
+
+The [foreign-exchange reserves page](https://en.wikipedia.org/wiki/List_of_countries_by_foreign-exchange_reserves) contains two `wikitable` elements. The country-level table has 198 rows and eight columns, including two repeated header rows after the first header. The second table describes global reserve currency composition and is not the target.
+
+The first table was cleaned by removing the extra headers, reference markers and nonbreaking or thin spaces, dropping the change, excluding-gold and reference columns, and checking for aggregate rows. No aggregate row remained among the 196 entries. The reserves including gold column is converted from USD millions to USD. Country labels with trailing asterisks are preserved in the raw data and cleaned separately for matching.
+
+```{r}
+clean_text <- function(x) {
+  x |> as.character() |> str_remove_all("\\[[^\\]]*\\]") |>
+    str_replace_all("[\u00a0\u2009\u202f]", " ") |> str_squish()
+}
+
+# Strict day-month-year parser: do not guess between date orders.
+strict_dmy <- function(x) {
+  p <- str_match(x, "^([0-9]{1,2})\\s+([[:alpha:]]+)\\s+([0-9]{4})$")
+  mm <- match(str_to_lower(str_sub(p[,3], 1, 3)), str_to_lower(month.abb))
+  iso <- rep(NA_character_, length(x))
+  good <- !is.na(p[,2]) & !is.na(mm) & !is.na(p[,4])
+  iso[good] <- sprintf("%04d-%02d-%02d", as.integer(p[good,4]),
+                      mm[good], as.integer(p[good,2]))
+  result <- as.Date(iso, format = "%Y-%m-%d")
+  ok <- !is.na(result) & !is.na(iso)
+  bad <- which(ok & format(result, "%Y-%m-%d") != iso)
+  result[bad] <- NA
+  result
+}
+wiki_tables <- read_html(file.path(data_dir, "wiki_reserves_raw.html")) |>
+  html_elements("table.wikitable") |> html_table()
+stopifnot(length(wiki_tables) == 2)
+
+clean_reserves <- function(x) {
+  stopifnot(ncol(x) == 8, grepl("Including gold", x[[3]][1], ignore.case = TRUE))
+  names(x) <- c("country", "continent", "reserves_including_gold",
+                "change_including_gold", "reserves_excluding_gold",
+                "change_excluding_gold", "reported_date", "reference")
+  x |> slice(-(1:2)) |> mutate(across(everything(), clean_text)) |>
+    filter(!is.na(country), country != "",
+           !str_detect(country, regex("^(World|Total|Grand Total|World Total|European Union|Euro Area|Eurozone)$",
+                                      ignore_case = TRUE))) |>
+    transmute(country, continent,
+              reserves_usd_million = parse_number(reserves_including_gold),
+              reserves_usd = reserves_usd_million * 1e6,
+              reported_date_raw = reported_date,
+              reported_date = strict_dmy(reported_date_raw),
+              reported_year = as.integer(str_extract(reported_date_raw, "\\b(?:19|20)\\d{2}\\b")))
+}
+wiki_reserves <- clean_reserves(wiki_tables[[1]])
+old <- read_csv(file.path(data_dir, "wiki_reserves_clean.csv"), show_col_types = FALSE)
+stopifnot(nrow(wiki_reserves) == 196, !anyDuplicated(wiki_reserves$country),
+          identical(wiki_reserves$country, old$country),
+          all(wiki_reserves$reserves_usd == old$reserves_usd),
+          all(wiki_reserves$reported_year == old$reported_year))
+date_fixes <- sum(wiki_reserves$reported_date != as.Date(old$reported_date), na.rm = TRUE)
+knitr::kable(count(wiki_reserves, reported_year, name = "Entries"),
+             col.names = c("Reported year", "Entries"))
+```
+
+A validation against the raw strings found `r date_fixes` incorrectly parsed valid dates in the initial CSV (for example, 1 March 2024 had become 20 January 2024). The corrected parser uses an explicit day–month–year format. Albania's source date, 31 April 2024, is invalid and remains missing as a full date; the printed year 2024 is retained for annual matching and its date uncertainty is flagged. The initial CSV and HTML are preserved, and the corrected dates are used for the analysis below.
+
+### Alternative table and parser fragility
+
+The [internet users page](https://en.wikipedia.org/wiki/List_of_countries_by_number_of_internet_users) has a single three-column table (`Location`, `Rate`, `Year`). Applying the reserves parser to this table fails the eight-column assertion. Removing two header rows would also incorrectly delete valid observations from the new table. The adapted parser uses the actual column names, parses percentages and years, and removes aggregate rows. It produces 225 entries with no missing fields; 222 are labeled 2026, which is a reported year and not necessarily a survey year.
+
+```{r}
+internet_tables <- read_html(file.path(data_dir, "wiki_internet_raw.html")) |>
+  html_elements("table.wikitable") |> html_table()
+target_id <- which(vapply(internet_tables, function(x) {
+  all(c("location","rate","year") %in% tolower(clean_text(names(x))))
+}, logical(1)))
+stopifnot(length(target_id) == 1)
+internet_raw <- internet_tables[[target_id]]
+parser_test <- tryCatch({
+  clean_reserves(internet_raw)
+  "Original parser succeeded."
+}, error = function(e) paste("Original parser failed:", conditionMessage(e)))
+parser_test
+
+wiki_internet <- internet_raw |> janitor::clean_names() |>
+  transmute(country = clean_text(location),
+            internet_usage_pct = parse_number(clean_text(rate)),
+            year = as.integer(parse_number(clean_text(year)))) |>
+  filter(!is.na(country), country != "",
+         !str_detect(country, regex("^(World|Total|Grand Total)$", ignore_case = TRUE)))
+stopifnot(nrow(wiki_internet) == 225, !anyNA(wiki_internet),
+          !anyDuplicated(wiki_internet$country),
+          all(between(wiki_internet$internet_usage_pct, 0, 100)))
+knitr::kable(head(wiki_internet, 5))
+```
+
+## 3. World Bank API and source comparison
+
+The [World Bank indicator FI.RES.TOTL.CD](https://data.worldbank.org/indicator/FI.RES.TOTL.CD) measures total reserves including gold in current US dollars. One `WDI()` call retrieved 2015–2025 data. After removing aggregate regions, the dataset contains 2,354 economy-year rows (214 economies), including 500 missing values. Missing values are not treated as zero.
+
+```{r}
+#| eval: false
+library(WDI)
+wdi_raw <- WDI::WDI(country = "all", indicator = "FI.RES.TOTL.CD",
+                    start = 2015, end = 2025, extra = TRUE)
+saveRDS(wdi_raw, file.path(data_dir, "wdi_reserves_raw.rds"))
+wdi_reserves <- wdi_raw |>
+  filter(!is.na(region), region != "Aggregates") |>
+  transmute(country, iso2c, iso3c, year, reserves_usd = FI.RES.TOTL.CD)
+write_csv(wdi_reserves, file.path(data_dir, "wdi_reserves.csv"))
+```
+
+```{r}
+wdi <- read_csv(file.path(data_dir, "wdi_reserves.csv"), show_col_types = FALSE) |>
+  rename(wdi_usd = reserves_usd)
+stopifnot(!anyDuplicated(wdi[c("iso3c", "year")]), all(wdi$wdi_usd > 0, na.rm = TRUE))
+economies <- distinct(wdi, country, iso3c)
+
+# Explicit crosswalk for names that differ across sources; no fuzzy joins.
+aliases <- c(
+"Bahamas" = "Bahamas, The",
+  "Brunei" = "Brunei Darussalam",
+  "Cape Verde" = "Cabo Verde",
+  "Curaçao" = "Curacao",
+  "Czech Republic" = "Czechia",
+  "Democratic Republic of the Congo" = "Congo, Dem. Rep.",
+  "Egypt" = "Egypt, Arab Rep.",
+  "Federated States of Micronesia" = "Micronesia, Fed. Sts.",
+  "Gambia" = "Gambia, The",
+  "Hong Kong" = "Hong Kong SAR, China",
+  "Iran" = "Iran, Islamic Rep.",
+  "Ivory Coast" = "Cote d'Ivoire",
+  "Kyrgyzstan" = "Kyrgyz Republic",
+  "Laos" = "Lao PDR",
+  "Macau" = "Macao SAR, China",
+  "North Korea" = "Korea, Dem. People's Rep.",
+  "Palestine" = "West Bank and Gaza",
+  "Republic of the Congo" = "Congo, Rep.",
+  "Russia" = "Russian Federation",
+  "Saint Kitts and Nevis" = "St. Kitts and Nevis",
+  "Saint Lucia" = "St. Lucia",
+  "Saint Vincent and the Grenadines" = "St. Vincent and the Grenadines",
+  "Slovakia" = "Slovak Republic",
+  "South Korea" = "Korea, Rep.",
+  "Syria" = "Syrian Arab Republic",
+  "São Tomé and Príncipe" = "Sao Tome and Principe",
+  "Turkey" = "Turkiye",
+  "Venezuela" = "Venezuela, RB",
+  "Vietnam" = "Viet Nam",
+  "Yemen" = "Yemen, Rep."
+)
+wiki <- wiki_reserves |>
+  mutate(country_clean = str_remove(country, "\\s*\\*+$"),
+         wdi_name = coalesce(unname(aliases[country_clean]), country_clean)) |>
+  left_join(economies, by = c("wdi_name" = "country"), na_matches = "never")
+stopifnot(nrow(wiki) == 196, !anyDuplicated(na.omit(wiki$iso3c)))
+
+same <- wiki |>
+  left_join(select(wdi, iso3c, year, wdi_usd),
+            by = c("iso3c", "reported_year" = "year"), na_matches = "never") |>
+  mutate(wdi_year = if_else(!is.na(wdi_usd), reported_year, NA_integer_))
+latest_wdi <- wdi |> filter(!is.na(wdi_usd)) |>
+  group_by(iso3c) |> slice_max(year, n = 1, with_ties = FALSE) |> ungroup() |>
+  select(iso3c, wdi_year = year, wdi_usd)
+latest <- wiki |> left_join(latest_wdi, by = "iso3c", na_matches = "never")
+
+compare <- function(x) {
+  x |> filter(!is.na(wdi_usd)) |>
+    mutate(diff_usd = reserves_usd - wdi_usd,
+           pct_diff = 100 * diff_usd / wdi_usd)
+}
+same_valid <- compare(same)
+latest_valid <- compare(latest)
+summary_comparison <- function(x, label) {
+  tibble(Comparison = label, Matched = nrow(x),
+         Identical = sum(x$diff_usd == 0),
+         `Wikipedia higher` = sum(x$diff_usd > 0),
+         `WDI higher` = sum(x$diff_usd < 0),
+         `Median absolute difference (%)` = median(abs(x$pct_diff)))
+}
+knitr::kable(bind_rows(summary_comparison(same_valid, "Same reported year"),
+                       summary_comparison(latest_valid, "Latest WDI observation")),
+             digits = 2)
+```
+
+The country-name crosswalk matches 192 of 196 Wikipedia entries to the WDI economy list. Taiwan, Vatican City, Montserrat and Somalia are absent from this specific WDI extract. Of the matched economies, 143 have a nonmissing WDI value in the Wikipedia-reported year (138 in 2024 and five in 2025); 176 have at least one valid WDI observation in the retrieved window. All valid pairs differ numerically in both comparisons. The median absolute percentage difference is calculated relative to WDI, not relative to Wikipedia.
+
+```{r}
+#| tbl-cap: "Largest same-year absolute differences (USD billions)."
+same_valid |> arrange(desc(abs(diff_usd))) |> slice_head(n = 6) |>
+  transmute(Country = country_clean, Year = reported_year,
+            Wikipedia = reserves_usd / 1e9, WDI = wdi_usd / 1e9,
+            `Difference (Wiki − WDI)` = diff_usd / 1e9) |>
+  knitr::kable(digits = 2)
+```
+
+The largest same-year gap is for the United States, whose Wikipedia value is lower than WDI by approximately $1.13 trillion. The Netherlands and Belgium show gaps in the opposite direction. These are differences between sources, not verified measurement errors. Wikipedia observations are snapshots from 2024–2026, with dates that vary across economies; WDI observations are annual, and the latest nonmissing years in the matched data range from 2017 to 2025. Even the same-year comparison does not align the exact date. The [WDI metadata](https://databank.worldbank.org/metadataglossary/world-development-indicators/series/FI.RES.TOTL.CD) also includes monetary gold, SDRs and IMF reserve positions, with year-end gold valuation. Timing, coverage, valuation conventions and revisions are plausible explanations; attributing individual gaps requires checking the underlying sources.
+
+**When to scrape:** Web scraping is appropriate when the information needed is available only through accessible web pages, automated retrieval is permitted, and a documented API or bulk download cannot meet the research need. When a structured API or official download provides the required data, it is preferable because the schema and provenance are easier to validate and the collection process is less vulnerable to changes in page layout.
+
+::: {.callout-note collapse="true" title="Complete country-level comparisons"}
+```{r}
+format_comparison <- function(x) {
+  x |> arrange(country_clean) |>
+    transmute(Economy = country_clean, `Wiki date` = reported_date_raw,
+              `WDI year` = wdi_year,
+              `Wiki (USD bn)` = reserves_usd / 1e9,
+              `WDI (USD bn)` = wdi_usd / 1e9,
+              `Difference (%)` = pct_diff)
+}
+knitr::kable(format_comparison(same_valid), digits = 3,
+             caption = "All valid same-year pairs.")
+knitr::kable(format_comparison(latest_valid), digits = 3,
+             caption = "All valid latest-available pairs.")
+```
 :::
+
+## 4. Research Data Plan: Public Disclosures of Cyber Espionage
+
+**Source and rationale.** The proposed source is the [Council on Foreign Relations Cyber Operations Tracker](https://www.cfr.org/cyber-operations/), which catalogues publicly known suspected state-sponsored cyber operations since 2005. The research examines whether public disclosures of cyber espionage affect political trust. CFR provides incident classifications and attribution information, making it more directly relevant than an unclassified collection of cybersecurity news. It does not cover all incidents: publicly disclosed events are a selected subset, and its methodology describes attribution uncertainty and English-language reporting bias.
+
+**Permission and access.** CFR's [Terms of Use](https://www.cfr.org/terms-use) provide free access but restrict certain uses and public or commercial redistribution of protected content. Access to the public site is not blanket permission to scrape or republish it. The current [robots.txt](https://www.cfr.org/robots.txt) could not be independently retrieved during preparation of this plan, so permission for automated access is not established. Before making any automated request, the exact target path and host (including the download host) would be checked and the result archived. Any unclear use or redistribution rights would be clarified with CFR. No CFR pages are scraped in this assignment.
+
+**API and collection strategy.** The tracker offers an official bulk download. No documented public API was identified on the tracker or in the reviewed materials. The official download is therefore the primary acquisition method; scraping would only be considered for essential missing fields, such as disclosure dates, if automated access and the intended use are permitted. Dates of occurrence and public disclosure would be coded separately; records without verified disclosure dates would be flagged rather than assigned arbitrary dates.
+
+**Volume, rate limiting and caching.** The initial acquisition requires one official download, with quarterly checks for updates consistent with CFR's stated update schedule. If approved supplemental page requests are necessary, only unmatched records would be visited, sequentially, at no more than one request every five seconds, using a descriptive user agent. HTTP 429 or 503 responses would trigger a pause and observance of `Retry-After`; repeated failures would stop collection. Original files, retrieval timestamps, URLs, checksums, variable definitions and data-processing code would be archived. Public release would be limited to materials authorized for redistribution.
+
+**Failure detection.** Required fields, unique incident identifiers, date formats, country mappings and row counts would be tested before analysis. Changes in column names, missingness, duplicate records or unexpected changes in coverage would stop the workflow for manual review. New versions would be compared against earlier snapshots to identify revised attribution or dates, retaining both versions and a change log. A sample of disclosure dates would be checked against original public reports. Downstream models would use a frozen, documented snapshot rather than a continuously changing website.
+
