@@ -144,3 +144,10 @@ body {margin:0; background:#fff; color:#222; font-family:Inter,Arial,Helvetica,s
         font-size: 14px;
     }
 }
+
+/* Highlight Assignments navigation */
+.assignment-menu button {
+    color: #0066cc;
+    font-weight: 700;
+}
+
