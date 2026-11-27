@@ -1,10 +1,371 @@
 ---
 title: "Assignment 6: Text Analytics with quanteda"
+execute:
+  echo: true
+  warning: false
+  message: false
+code-fold: true
+code-summary: "Show R code"
 ---
 
-::: {.assignment-report}
+```{=html}
+<style>
+/* Assignment 6 only: preserve the shared course-site layout. */
+.assignment-report.assignment06-report {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+.assignment06-report table {
+  display: table !important;
+  width: 100% !important;
+  max-width: 100%;
+  table-layout: auto !important;
+  border-collapse: collapse;
+  margin: 14px 0 24px;
+  font-size: 0.88em;
+  line-height: 1.5;
+}
+.assignment06-report table colgroup { display: table-column-group !important; }
+.assignment06-report table col { display: table-column !important; width: auto !important; }
+.assignment06-report table thead { display: table-header-group !important; }
+.assignment06-report table tbody { display: table-row-group !important; }
+.assignment06-report table tfoot { display: table-footer-group !important; }
+.assignment06-report table tr { display: table-row !important; width: auto !important; }
+.assignment06-report table th,
+.assignment06-report table td {
+  display: table-cell !important;
+  width: auto !important;
+  min-width: 0;
+  padding: 9px 12px !important;
+  vertical-align: top;
+  white-space: normal;
+  overflow-wrap: normal;
+  border-bottom: 1px solid #dedede;
+}
+.assignment06-report table th {
+  font-weight: 600;
+  border-top: 1px solid #999;
+  border-bottom: 1px solid #999;
+  background: #f7f7f7;
+}
+.assignment06-report table caption {
+  caption-side: top;
+  text-align: left;
+  font-weight: 500;
+  padding: 0 0 8px;
+}
+.assignment06-report .cell-output-display,
+.assignment06-report .quarto-table-container,
+.assignment06-report .table-responsive {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.assignment06-report pre { max-width: 100%; overflow-x: auto; }
+.assignment06-report details { margin: 12px 0 18px; }
+.assignment06-report img { max-width: 100%; height: auto; }
+@media (max-width: 780px) {
+  .assignment06-report table { font-size: 0.8em; }
+  .assignment06-report table th,
+  .assignment06-report table td { padding: 7px 8px !important; }
+}
+.assignment06-report details.audit-table { max-width: 100%; overflow-x: auto; }
+.assignment06-report figure img { display: block; margin: 0 auto; }
+</style>
+```
+
+:::: {.assignment-report .assignment06-report}
+
 # Assignment 6: Text Analytics with quanteda
 
-This assignment has not yet been completed.
+**Summit Tweets, Presidential Documents, and Inaugural Addresses**  
+EPPS 6302 — Methods of Data Collection and Production | Fall 2026
 
+```{r}
+#| label: setup
+#| include: false
+library(quanteda)
+library(quanteda.textstats)
+library(dplyr)
+library(readr)
+library(ggplot2)
+root <- "data/assignment06"
+read_result <- function(path) read_csv(file.path(root, path), show_col_types = FALSE)
+manifest <- read_result("cpd/final_manifest.csv")
+log <- read_result("cpd/download_log.csv")
+stopifnot(nrow(manifest) == 403, !anyDuplicated(manifest$document),
+          nrow(log) == 403, !anyDuplicated(log$document),
+          all(log$status == "Success"), sum(manifest$included) == 205)
+annual <- grepl("(DIGEST|CHECKLIST)$", manifest$document)
+manifest$individual_sample <- manifest$included & !annual
+stopifnot(sum(manifest$individual_sample) == 196)
+corp <- readRDS(file.path(root, "cpd/corpus_private.rds"))
+stopifnot(ndoc(corp) == 205, setequal(docnames(corp), manifest$document[manifest$included]))
+individual <- corp[docnames(corp) %in% manifest$document[manifest$individual_sample]]
+stopifnot(ndoc(individual) == 196)
+```
+
+## 0. Setup and sources
+
+The analysis used quanteda 4.3.1, quanteda.textstats 0.97.2, quanteda.textplots 0.96.1, and quanteda.textmodels 0.9.10. All data and model outputs were cached locally. The following report uses saved results and recomputes the individual-document CPD comparison from the cached corpus, without making any new API requests.
+
+## 1. Public discourse: the 2021 Biden–Xi summit
+
+The archived dataset contains 14,520 nonempty tweets, including 9,059 repeated text rows (62.4%). The leading terms are *biden*, *xi*, and *summit*; *taiwan* appears 1,578 times. Retaining repeats describes circulation rather than unique opinions. Hashtag co-occurrence links #biden and #china (439 tweets), whereas mention clusters connect media accounts and other public actors. These are within-tweet co-occurrences, not interpersonal communication networks. Keyword selection, a restricted collection window, retweets, and multilingual content limit representativeness. Users and media organizations produced the posts for online audiences; their frequencies cannot measure population-level support for policy.
+
+```{r}
+#| eval: false
+# Archived source; no Twitter/X API call.
+url <- "https://raw.githubusercontent.com/datageneration/datamethods/master/textanalytics/summit_11162021.csv"
+summit <- read_csv(file.path(root, "tweets/summit_11162021.csv"))
+tweet_corpus <- corpus(summit$text)
+tweet_toks <- tokens(tweet_corpus, remove_punct = TRUE, remove_url = TRUE)
+word_toks <- tokens_remove(tokens_tolower(tweet_toks),
+                           c(stopwords("en"), "rt", "#*", "@*"))
+word_dfm <- dfm_remove(dfm(word_toks), "^[[:digit:][:punct:]]+$", valuetype = "regex")
+head(topfeatures(word_dfm, 30))
+```
+
+![Frequent terms in the archived summit tweets.](data/assignment06/figures/tweet_words.png){width=90%}
+
+::: {layout-ncol=2}
+![Hashtag co-occurrence: top 50 features, at least 50 shared tweets.](data/assignment06/figures/hashtag_network.png)
+
+![Mention co-occurrence: top 50 features, at least 20 shared tweets.](data/assignment06/figures/mention_network.png)
 :::
+
+LSA on 14,246 nonempty post-trimming documents and 5,558 features identifies a dominant summit-coverage dimension and contrasts involving formal reporting, meeting logistics, and broader geopolitical discussion. Its first dimension has effectively zero negative loadings; the remaining contrasts are exploratory patterns rather than validated attitudes or topics.
+
+| LSA dimension | Illustrative high-loading terms | Interpretation |
+|---:|---|---|
+| 1 | biden, xi, summit, virtual | General summit coverage |
+| 2 | president, jinping vs. russia, ukraine | Formal reporting and broader geopolitics |
+| 3 | summit, virtual vs. president, said | Meeting logistics and reported remarks |
+| 4 | old, friend, candid vs. russia, ukraine, defense | Diplomatic language and security discussion |
+
+```{r}
+#| eval: false
+# Restrict networks to frequent features; binary co-occurrence by tweet.
+x <- dfm_select(dfm(tweet_toks), "#*")
+x <- dfm_select(x, names(topfeatures(x, 50)), valuetype = "fixed")
+co <- fcm(x, context = "document", count = "boolean", tri = FALSE)
+quanteda.textplots::textplot_network(co, min_freq = 50)
+# Repeat with @* and min_freq = 20 for mentions.
+lsa_dfm <- dfm_trim(word_dfm, min_docfreq = 2)
+lsa_dfm <- lsa_dfm[ntoken(lsa_dfm) > 0, ]
+set.seed(6302)
+lsa <- quanteda.textmodels::textmodel_lsa(lsa_dfm, nd = 4, margin = "documents")
+```
+
+## 2. Government discourse: Compilation of Presidential Documents
+
+### 2.1. CPD data note
+
+**Source and permission.** [GovInfo CPD](https://www.govinfo.gov/help/cpd) is compiled by the Office of the Federal Register (NARA) from official materials. Collection used the documented [GovInfo API](https://api.govinfo.gov/docs) with a locally stored key, not webpage scraping. GovInfo's [copyright notice](https://www.govinfo.gov/about) generally identifies federal government works as public domain, while cautioning that third-party material can remain protected. Only metadata, aggregate results, short KWIC examples and logs are published here; full documents and the key remain private.
+
+**Query and retrieval.** November 26, 2026 (CST); date window January 20, 2021–November 26, 2026, inclusive.
+
+```text
+collection:CPD AND "Xi Jinping" AND publishdate:range(2021-01-20,2026-11-26)
+```
+
+Six search requests returned 100, 100, 100, 100, 3 and 0 records. All 403 distinct records were retrieved as text between 17:56:28 and 18:25:06 CST, using sequential requests with a four-second delay. Source URLs, status, timestamps, bytes and MD5 checksums were retained. The empty sixth page terminated pagination.
+
+```{r}
+#| eval: false
+library(httr2)
+key <- Sys.getenv("GOVINFO_API_KEY")
+query <- readLines(file.path(root, "cpd/query.txt"))[1]
+body <- list(query = query, pageSize = 100, offsetMark = "*",
+             sorts = list(list(field = "publishdate", sortOrder = "ASC")))
+response <- request("https://api.govinfo.gov/search") |>
+  req_url_query(api_key = key) |> req_body_json(body) |> req_perform()
+page <- resp_body_json(response)
+# Subsequent requests use the returned offsetMark until results are empty.
+# Download each discovered text rendition; cache full text and log status.
+```
+
+**Selection and gaps.** The cleaning rule removes standalone administration headings and page markers and truncates text at the first qualifying editorial-note/index heading. Exact case-insensitive `Xi Jinping` matches in the resulting text identify 205 records; 198 do not match, including 197 that match before cleaning and one that does not match even in extracted full text. This is a rule-based distinction, not a manual audit of every document; relevant material may be missed. Administration follows the document heading (including the January 20, 2025 transition-day record, assigned to Trump). Nine matching annual digests/checklists are retained in the collection but excluded from the main comparison because they combine events and records. The full 205-record result is shown as a sensitivity comparison. The search excludes alternative references not matched by the query, and 2026 is incomplete.
+
+| Selection | Biden | Trump | Total |
+|---|---:|---:|---:|
+| Search hits and successful retrievals | 185 | 218 | 403 |
+| Exact phrase in cleaned text | 145 | 60 | 205 |
+| Annual digests/checklists removed | 8 | 1 | 9 |
+| Individual records for main comparison | 137 | 59 | 196 |
+
+### 2.2. Xi in context and administration keyness
+
+The CPD records are official communications and transcripts selected for publication, including remarks by reporters and other speakers. In the full matching corpus, KWIC finds 550 instances of the standalone token *Xi* in 203 documents; two phrase-matching records yield no standalone-token match. Four documents dated November 15–17, 2021 yield nine contexts, including meeting remarks and reporters' questions about the summit. They provide an official record of interaction, whereas tweets capture selected online discussion. Neither captures private negotiations or representative public attitudes. The full CPD period also extends beyond the summit window.
+
+```{r}
+#| label: individual-cpd-kwic
+#| results: asis
+k <- as_tibble(as.data.frame(kwic(tokens(individual, remove_punct = FALSE),
+                      pattern = "Xi", window = 7, valuetype = "fixed",
+                      case_insensitive = TRUE)))
+kwic_counts <- k |> count(docname, name = "contexts") |>
+  left_join(manifest |> select(document, administration), by = c("docname" = "document")) |>
+  group_by(administration) |> summarise(documents = n(), contexts = sum(contexts), .groups = "drop")
+knitr::kable(kwic_counts, col.names = c("Administration", "Documents with Xi", "Xi contexts"))
+```
+
+| Summit date | Document | Selected context (short excerpt) |
+|---|---|---|
+| 2021-11-15 | DCPD-202100958 | thank you … President **Xi**. Good to see you |
+| 2021-11-16 | DCPD-202100960 | a reaction to your meeting with President **Xi** last night? |
+| 2021-11-17 | DCPD-202100966 | almost with President **Xi** Jinping of China |
+
+```{r}
+#| label: fig-cpd-individual
+#| fig-cap: "Administration keyness: 196 individual CPD records; positive values favor Trump."
+#| fig-width: 8
+#| fig-height: 8
+cpd_dfm <- dfm(tokens_remove(tokens(individual, remove_punct = TRUE,
+                remove_numbers = TRUE, remove_url = TRUE), stopwords("en")))
+cpd_dfm <- dfm_trim(cpd_dfm, min_docfreq = 3)
+grouped <- dfm_group(cpd_dfm, groups = docvars(cpd_dfm, "administration"))
+keyness <- as_tibble(textstat_keyness(grouped, target = "Trump", measure = "chi2"))
+stopifnot(nrow(keyness) > 0)
+cpd_top <- bind_rows(slice_max(keyness, chi2, n = 15, with_ties = FALSE),
+                     slice_min(keyness, chi2, n = 15, with_ties = FALSE))
+trump_terms <- paste(head(keyness$feature[keyness$chi2 > 0], 5), collapse = ", ")
+biden_terms <- paste(head(rev(keyness$feature[keyness$chi2 < 0]), 5), collapse = ", ")
+ggplot(cpd_top, aes(reorder(feature, chi2), chi2, fill = chi2 > 0)) +
+  geom_col() + coord_flip() + theme_minimal() +
+  scale_fill_manual(values = c("#4679A5", "#B85A55"), labels = c("Biden", "Trump"), name = "Administration") +
+  labs(x = NULL, y = "Signed chi-square")
+```
+
+In the individual-record comparison, the five strongest positive terms are `r trump_terms`; the five strongest negative terms are `r biden_terms`. The original 205-record comparison highlights *tariffs* for Trump and *security* for Biden, alongside genre markers such as *q*, *press*, and *transcript*. Annual compilations account for 47.2% of Biden and 13.6% of Trump cleaned characters in that original sample. Differences in genre, editorial selection, and time coverage confound substantive interpretation; keyness describes relative usage, not causal policy change.
+
+<details>
+<summary>Supplementary result: all 205 matching CPD records (including annual compilations)</summary>
+
+![Original signed chi-square keyness comparison.](data/assignment06/figures/cpd_keyness.png){width=85%}
+
+</details>
+
+## 3. Inaugural addresses, 1945–2025
+
+The 21 speeches (10 Democratic, 11 Republican) come from `data_corpus_inaugural`; version 4.3.1 contains the corrected 2025 Trump address and no exact duplicate texts. Inaugurations are ceremonial speeches written for national audiences, not random observations of ordinary political language. Roosevelt (1945) is shortest (555 tokens), while Trump (2025) is longest (2,909). Moving-average TTR (100-token windows) ranges from .640 to .711, mitigating ordinary TTR's length dependence. Flesch scores range from 48.8 (Truman, 1949) to 73.2 (Biden, 2021); higher scores indicate easier estimated reading. Cosine similarity is highest for Reagan's two speeches (.725), and lowest for Roosevelt 1945 and Trump 2017 (.224). Republican keyness highlights *government* and *freedom*, Democratic keyness *democracy* and *change*. These exploratory word associations are not independent tests of ideological differences.
+
+```{r}
+#| eval: false
+inaugural <- corpus_subset(data_corpus_inaugural, Year >= 1945)
+word_toks <- tokens(inaugural, remove_punct = TRUE, remove_numbers = TRUE, remove_symbols = TRUE)
+ntoken(word_toks)
+textstat_lexdiv(word_toks, measure = c("TTR", "MATTR"), MATTR_window = 100L)
+textstat_readability(inaugural, measure = "Flesch")
+content_dfm <- dfm_trim(dfm(tokens_remove(word_toks, stopwords("en"))), min_docfreq = 2)
+textstat_simil(content_dfm, method = "cosine", margin = "documents")
+party_dfm <- dfm_group(content_dfm, groups = docvars(content_dfm, "Party"))
+textstat_keyness(party_dfm, target = "Republican", measure = "chi2")
+```
+
+::: {layout-ncol=2}
+![Speech length (tokens).](data/assignment06/figures/inaugural_tokens.png)
+
+![Type–token ratio (TTR).](data/assignment06/figures/inaugural_TTR.png)
+:::
+
+::: {layout-ncol=2}
+![Moving-average type–token ratio (MATTR).](data/assignment06/figures/inaugural_MATTR.png)
+
+![Flesch reading ease.](data/assignment06/figures/inaugural_Flesch.png)
+:::
+
+![Cosine similarity of content-word count vectors, excluding stopwords and terms appearing in fewer than two speeches.](data/assignment06/figures/inaugural_cosine.png){width=90%}
+
+![Party keyness (positive: Republican; negative: Democratic).](data/assignment06/figures/inaugural_keyness.png){width=85%}
+
+<details>
+<summary>Speech-level metrics</summary>
+
+```{r}
+#| echo: false
+m <- read_result("inaugural/metrics.csv") |> select(document, Party, tokens, TTR, MATTR, Flesch)
+knitr::kable(m, digits = 3, col.names = c("Address", "Party", "Tokens", "TTR", "MATTR", "Flesch"))
+```
+
+</details>
+
+## 4. What does Wordfish measure?
+
+Wordfish (Slapin and Proksch 2008) is an unsupervised, one-dimensional Poisson model of word counts:
+
+$$
+y_{ij}\sim\operatorname{Poisson}(\lambda_{ij}),\qquad
+\log\lambda_{ij}=\alpha_i+\psi_j+\beta_j\theta_i.
+$$
+
+Document effects $\alpha_i$ adjust overall verbosity, word effects $\psi_j$ capture baseline frequency, and $\beta_j$ measures discrimination along document position $\theta_i$. Conditional independence and a common one-dimensional structure are simplifying assumptions. The model uses 2,093 features across 21 addresses. Setting `dir` orders Roosevelt 1945 below Trump 2025 to fix the otherwise arbitrary sign; it does not define ideology. Positions correlate strongly with year ($r=.874$) but weakly with Republican affiliation ($r=.098$). Earlier words such as *joint* and *Europe* contrast with later words such as *radical* and *Obama*. The dimension appears largely temporal, reflecting changing vocabulary and historical context rather than a validated left–right scale. Validation requires independent political-position measures, examination of high-discrimination terms in context, robustness to preprocessing and genre, and alternative scaling specifications. The plotted intervals reflect model-based uncertainty, not uncertainty about construct validity.
+
+```{r}
+#| eval: false
+anchors <- match(c("1945-Roosevelt", "2025-Trump"), docnames(content_dfm))
+set.seed(6302)
+wf <- quanteda.textmodels::textmodel_wordfish(content_dfm, dir = anchors)
+# Compare estimated positions with year and party; inspect beta loadings.
+```
+
+![Wordfish positions and approximate 95% model-based intervals.](data/assignment06/figures/inaugural_wordfish.png){width=95%}
+
+<details>
+<summary>Wordfish estimates and standard errors</summary>
+
+```{r}
+#| echo: false
+knitr::kable(read_result("inaugural/wordfish_scores.csv") |> select(document, Party, theta, se),
+             digits = 3, col.names = c("Address", "Party", "Position", "SE"))
+```
+
+</details>
+
+## 5. CPD manifest and download log
+
+The complete metadata and download record is provided below for all 403 search hits, including exclusions. The `Main sample` flag identifies the 196 individual records used for the primary comparison. Full text, raw downloads, cached corpus objects, and API credentials are not published.
+
+<details>
+<summary>Search pagination log (6 requests)</summary>
+
+```{r}
+#| echo: false
+knitr::kable(read_result("cpd/search_log.csv"),
+             col.names = c("Page", "Records", "Reported count", "Cached", "Retrieved (CST)"))
+```
+
+</details>
+
+<details>
+<summary>Full collection manifest (403 records)</summary>
+
+```{r}
+#| echo: false
+knitr::kable(manifest |> select(document, dateIssued, title, administration,
+                               full_phrase_hits, main_phrase_hits, included,
+                               individual_sample, exclusion_reason),
+             col.names = c("ID", "Issue date", "Title", "Administration", "Full hits",
+                           "Cleaned hits", "Phrase match", "Main sample", "Exclusion reason"))
+```
+
+</details>
+
+<details>
+<summary>Full download log (403 records)</summary>
+
+```{r}
+#| echo: false
+knitr::kable(log |> select(document, status, format, http_status, retrieved_at, bytes, md5),
+             col.names = c("ID", "Status", "Format", "HTTP", "Retrieved (CST)", "Bytes", "MD5"))
+```
+
+</details>
+
+## References and data sources
+
+- [quanteda tutorials, chapters 1–4 and 6](https://tutorials.quanteda.io/); [quanteda release notes](https://quanteda.io/news/index.html); [Wordfish documentation](https://quanteda.io/reference/textmodel_wordfish.html).
+- Slapin, Jonathan B., and Sven-Oliver Proksch. 2008. “A Scaling Model for Estimating Time-Series Party Positions from Texts.” *American Journal of Political Science* 52(3): 705–722. [doi:10.1111/j.1540-5907.2008.00338.x](https://doi.org/10.1111/j.1540-5907.2008.00338.x).
+- [Archived summit tweets](https://github.com/datageneration/datamethods/blob/master/textanalytics/summit_11162021.csv); [GovInfo CPD collection](https://www.govinfo.gov/help/cpd); [GovInfo API documentation](https://api.govinfo.gov/docs).
+
+::::
