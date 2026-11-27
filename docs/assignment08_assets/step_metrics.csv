@@ -1,0 +1,4 @@
+step,links,tp,fp,fn,tn,precision,recall,f1
+Deterministic,93,93,0,7,249900,1,0.93,0.9637305699481865
+Probabilistic only (full key),7,7,0,93,249900,1,0.07,0.1308411214953271
+Combined,100,100,0,0,249900,1,1,1

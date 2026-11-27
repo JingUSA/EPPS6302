@@ -1,0 +1,91 @@
+threshold,curve,links,tp,fp,fn,tn,precision,recall,f1
+0.7,Original truncated key,614,7,607,93,249293,0.011400651465798045,0.07,0.0196078431372549
+0.71,Original truncated key,13,7,6,93,249894,0.5384615384615384,0.07,0.12389380530973451
+0.72,Original truncated key,13,7,6,93,249894,0.5384615384615384,0.07,0.12389380530973451
+0.73,Original truncated key,13,7,6,93,249894,0.5384615384615384,0.07,0.12389380530973451
+0.74,Original truncated key,13,7,6,93,249894,0.5384615384615384,0.07,0.12389380530973451
+0.75,Original truncated key,12,7,5,93,249895,0.5833333333333334,0.07,0.125
+0.76,Original truncated key,12,7,5,93,249895,0.5833333333333334,0.07,0.125
+0.77,Original truncated key,11,7,4,93,249896,0.6363636363636364,0.07,0.12612612612612611
+0.78,Original truncated key,10,7,3,93,249897,0.7,0.07,0.12727272727272726
+0.79,Original truncated key,10,7,3,93,249897,0.7,0.07,0.12727272727272726
+0.8,Original truncated key,10,7,3,93,249897,0.7,0.07,0.12727272727272726
+0.81,Original truncated key,10,7,3,93,249897,0.7,0.07,0.12727272727272726
+0.82,Original truncated key,10,7,3,93,249897,0.7,0.07,0.12727272727272726
+0.83,Original truncated key,9,7,2,93,249898,0.7777777777777778,0.07,0.12844036697247707
+0.84,Original truncated key,8,7,1,93,249899,0.875,0.07,0.12962962962962962
+0.85,Original truncated key,7,7,0,93,249900,1,0.07,0.1308411214953271
+0.86,Original truncated key,7,7,0,93,249900,1,0.07,0.1308411214953271
+0.87,Original truncated key,7,7,0,93,249900,1,0.07,0.1308411214953271
+0.88,Original truncated key,7,7,0,93,249900,1,0.07,0.1308411214953271
+0.89,Original truncated key,7,7,0,93,249900,1,0.07,0.1308411214953271
+0.9,Original truncated key,7,7,0,93,249900,1,0.07,0.1308411214953271
+0.91,Original truncated key,7,7,0,93,249900,1,0.07,0.1308411214953271
+0.92,Original truncated key,7,7,0,93,249900,1,0.07,0.1308411214953271
+0.93,Original truncated key,7,7,0,93,249900,1,0.07,0.1308411214953271
+0.94,Original truncated key,7,7,0,93,249900,1,0.07,0.1308411214953271
+0.95,Original truncated key,4,4,0,96,249900,1,0.04,0.07692307692307693
+0.96,Original truncated key,2,2,0,98,249900,1,0.02,0.0392156862745098
+0.97,Original truncated key,2,2,0,98,249900,1,0.02,0.0392156862745098
+0.98,Original truncated key,0,0,0,100,249900,NA,0,0
+0.99,Original truncated key,0,0,0,100,249900,NA,0,0
+0.7,"Probabilistic only, full key",614,7,607,93,249293,0.011400651465798045,0.07,0.0196078431372549
+0.71,"Probabilistic only, full key",13,7,6,93,249894,0.5384615384615384,0.07,0.12389380530973451
+0.72,"Probabilistic only, full key",13,7,6,93,249894,0.5384615384615384,0.07,0.12389380530973451
+0.73,"Probabilistic only, full key",13,7,6,93,249894,0.5384615384615384,0.07,0.12389380530973451
+0.74,"Probabilistic only, full key",13,7,6,93,249894,0.5384615384615384,0.07,0.12389380530973451
+0.75,"Probabilistic only, full key",12,7,5,93,249895,0.5833333333333334,0.07,0.125
+0.76,"Probabilistic only, full key",12,7,5,93,249895,0.5833333333333334,0.07,0.125
+0.77,"Probabilistic only, full key",11,7,4,93,249896,0.6363636363636364,0.07,0.12612612612612611
+0.78,"Probabilistic only, full key",10,7,3,93,249897,0.7,0.07,0.12727272727272726
+0.79,"Probabilistic only, full key",10,7,3,93,249897,0.7,0.07,0.12727272727272726
+0.8,"Probabilistic only, full key",10,7,3,93,249897,0.7,0.07,0.12727272727272726
+0.81,"Probabilistic only, full key",10,7,3,93,249897,0.7,0.07,0.12727272727272726
+0.82,"Probabilistic only, full key",10,7,3,93,249897,0.7,0.07,0.12727272727272726
+0.83,"Probabilistic only, full key",9,7,2,93,249898,0.7777777777777778,0.07,0.12844036697247707
+0.84,"Probabilistic only, full key",8,7,1,93,249899,0.875,0.07,0.12962962962962962
+0.85,"Probabilistic only, full key",7,7,0,93,249900,1,0.07,0.1308411214953271
+0.86,"Probabilistic only, full key",7,7,0,93,249900,1,0.07,0.1308411214953271
+0.87,"Probabilistic only, full key",7,7,0,93,249900,1,0.07,0.1308411214953271
+0.88,"Probabilistic only, full key",7,7,0,93,249900,1,0.07,0.1308411214953271
+0.89,"Probabilistic only, full key",7,7,0,93,249900,1,0.07,0.1308411214953271
+0.9,"Probabilistic only, full key",7,7,0,93,249900,1,0.07,0.1308411214953271
+0.91,"Probabilistic only, full key",7,7,0,93,249900,1,0.07,0.1308411214953271
+0.92,"Probabilistic only, full key",7,7,0,93,249900,1,0.07,0.1308411214953271
+0.93,"Probabilistic only, full key",7,7,0,93,249900,1,0.07,0.1308411214953271
+0.94,"Probabilistic only, full key",7,7,0,93,249900,1,0.07,0.1308411214953271
+0.95,"Probabilistic only, full key",4,4,0,96,249900,1,0.04,0.07692307692307693
+0.96,"Probabilistic only, full key",2,2,0,98,249900,1,0.02,0.0392156862745098
+0.97,"Probabilistic only, full key",2,2,0,98,249900,1,0.02,0.0392156862745098
+0.98,"Probabilistic only, full key",0,0,0,100,249900,NA,0,0
+0.99,"Probabilistic only, full key",0,0,0,100,249900,NA,0,0
+0.7,"Combined, full key (original pair decisions)",707,100,607,0,249293,0.14144271570014144,1,0.24783147459727387
+0.71,"Combined, full key (original pair decisions)",106,100,6,0,249894,0.9433962264150944,1,0.970873786407767
+0.72,"Combined, full key (original pair decisions)",106,100,6,0,249894,0.9433962264150944,1,0.970873786407767
+0.73,"Combined, full key (original pair decisions)",106,100,6,0,249894,0.9433962264150944,1,0.970873786407767
+0.74,"Combined, full key (original pair decisions)",106,100,6,0,249894,0.9433962264150944,1,0.970873786407767
+0.75,"Combined, full key (original pair decisions)",105,100,5,0,249895,0.9523809523809523,1,0.975609756097561
+0.76,"Combined, full key (original pair decisions)",105,100,5,0,249895,0.9523809523809523,1,0.975609756097561
+0.77,"Combined, full key (original pair decisions)",104,100,4,0,249896,0.9615384615384616,1,0.9803921568627451
+0.78,"Combined, full key (original pair decisions)",103,100,3,0,249897,0.970873786407767,1,0.9852216748768473
+0.79,"Combined, full key (original pair decisions)",103,100,3,0,249897,0.970873786407767,1,0.9852216748768473
+0.8,"Combined, full key (original pair decisions)",103,100,3,0,249897,0.970873786407767,1,0.9852216748768473
+0.81,"Combined, full key (original pair decisions)",103,100,3,0,249897,0.970873786407767,1,0.9852216748768473
+0.82,"Combined, full key (original pair decisions)",103,100,3,0,249897,0.970873786407767,1,0.9852216748768473
+0.83,"Combined, full key (original pair decisions)",102,100,2,0,249898,0.9803921568627451,1,0.9900990099009901
+0.84,"Combined, full key (original pair decisions)",101,100,1,0,249899,0.9900990099009901,1,0.9950248756218906
+0.85,"Combined, full key (original pair decisions)",100,100,0,0,249900,1,1,1
+0.86,"Combined, full key (original pair decisions)",100,100,0,0,249900,1,1,1
+0.87,"Combined, full key (original pair decisions)",100,100,0,0,249900,1,1,1
+0.88,"Combined, full key (original pair decisions)",100,100,0,0,249900,1,1,1
+0.89,"Combined, full key (original pair decisions)",100,100,0,0,249900,1,1,1
+0.9,"Combined, full key (original pair decisions)",100,100,0,0,249900,1,1,1
+0.91,"Combined, full key (original pair decisions)",100,100,0,0,249900,1,1,1
+0.92,"Combined, full key (original pair decisions)",100,100,0,0,249900,1,1,1
+0.93,"Combined, full key (original pair decisions)",100,100,0,0,249900,1,1,1
+0.94,"Combined, full key (original pair decisions)",100,100,0,0,249900,1,1,1
+0.95,"Combined, full key (original pair decisions)",97,97,0,3,249900,1,0.97,0.9847715736040609
+0.96,"Combined, full key (original pair decisions)",95,95,0,5,249900,1,0.95,0.9743589743589743
+0.97,"Combined, full key (original pair decisions)",95,95,0,5,249900,1,0.95,0.9743589743589743
+0.98,"Combined, full key (original pair decisions)",93,93,0,7,249900,1,0.93,0.9637305699481865
+0.99,"Combined, full key (original pair decisions)",93,93,0,7,249900,1,0.93,0.9637305699481865

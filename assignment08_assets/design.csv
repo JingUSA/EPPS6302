@@ -1,0 +1,2 @@
+seed,blocking_used,fn_cost,fp_cost,threshold_rule,weight_estimation
+42,TRUE,2,1,>= for calibration; > .95 for workshop comparisons,Full known key; Jeffreys smoothing; normalized log(m/u); in-sample

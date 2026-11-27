@@ -1,0 +1,4 @@
+corruption_rate,actual_corrupted,rule1,rule2,rule3,probabilistic,candidate_pairs,duplicated_trs,duplicated_tea,links,tp,fp,fn,tn,precision,recall,f1
+0.1,10,90,3,3,3,163216,0,0,99,99,0,1,249900,1,0.99,0.9949748743718593
+0.2,20,80,9,4,4,165649,0,0,97,97,0,3,249900,1,0.97,0.9847715736040609
+0.4,40,60,19,12,2,167281,0,0,93,93,0,7,249900,1,0.93,0.9637305699481865

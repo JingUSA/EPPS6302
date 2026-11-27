@@ -2,9 +2,14 @@
 title: "Assignment 8: Record Linkage"
 ---
 
-::: {.assignment-report}
+```{=html}
+<meta http-equiv="refresh" content="0; url=assign_linkage.html">
+```
+
+:::: {.assignment-report}
+
 # Assignment 8: Record Linkage
 
-This assignment has not yet been completed.
+[Open the final record linkage report](assign_linkage.html).
 
-:::
+::::
