@@ -157,3 +157,9 @@ body {margin:0; background:#fff; color:#222; font-family:Inter,Arial,Helvetica,s
     color: #0066CC !important;
     font-weight: 700 !important;
 }
+
+/* Assignments navigation - blue and bold */
+.header .nav .assignment-menu > button {
+    color: #0066CC !important;
+    font-weight: 700 !important;
+}
