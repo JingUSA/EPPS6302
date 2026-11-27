@@ -1,0 +1,2 @@
+comments,replies,reply_share,likes_observed,likes_missing,total_likes,likes_zero,likes_median,likes_p90,likes_p99,likes_max,top_1pct_n,top_1pct_like_share,distinct_authors,known_author_comments,missing_author_comments,top_10pct_authors_n,top_10pct_author_comment_share,repeated_text_rows,missing_text,blank_text
+5387,997,0.1850751809912753,5387,0,9351,3717,0,2,20,735,54,0.5582290664100096,4473,5387,0,448,0.24429181362539445,59,0,2

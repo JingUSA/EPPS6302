@@ -1,0 +1,10 @@
+reference,dictionary,Freq
+positive,positive,2
+negative,positive,8
+neither,positive,2
+positive,negative,0
+negative,negative,8
+neither,negative,3
+positive,neither,6
+negative,neither,6
+neither,neither,5

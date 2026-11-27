@@ -1,0 +1,7 @@
+channel,period,uploads,kept,missed_by_search,found_by_search,dropped
+BBC News,before,1271,69,66,3,1202
+BBC News,after,500,44,43,1,456
+CNN,before,2095,206,179,27,1889
+CNN,after,1124,149,130,19,975
+NBC News,before,2889,200,196,4,2689
+NBC News,after,1348,151,149,2,1197

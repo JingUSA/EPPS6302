@@ -1,0 +1,6 @@
+pattern,matches,documents,sampled
+democrat*,518,414,20
+republican*,488,380,20
+trump,1273,962,20
+vote*,1030,727,20
+ballot*,126,105,20

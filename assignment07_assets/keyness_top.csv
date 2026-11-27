@@ -1,0 +1,151 @@
+comparison,target,feature,chi2,p,n_target,n_reference
+BBC News vs other two,BBC News,iran,142.56720847609716,0,182,80
+BBC News vs other two,BBC News,world,113.33934531089089,0,162,80
+BBC News vs other two,BBC News,us,96.395664978409755,0,236,175
+BBC News vs other two,BBC News,bbc,95.10094973662996,0,50,0
+BBC News vs other two,BBC News,war,93.19568923566818,0,210,148
+BBC News vs other two,BBC News,uk,47.06183283326456,6.878164704460232e-12,42,11
+BBC News vs other two,BBC News,usa,46.186983958669906,1.0748846257513378e-11,85,52
+BBC News vs other two,BBC News,iranian,39.92447058887239,2.639752860744693e-10,21,0
+BBC News vs other two,BBC News,regime,35.91362020624299,2.0626180763372304e-9,39,14
+BBC News vs other two,BBC News,5000,35.401858207835886,2.682308597456995e-9,24,3
+BBC News vs other two,BBC News,bribery,34.219385876260795,4.9236027477306266e-9,18,0
+BBC News vs other two,BBC News,money,32.4240510042342,1.2394295922923959e-8,83,63
+BBC News vs other two,BBC News,wars,30.683626321069355,3.037171847353193e-8,39,17
+BBC News vs other two,BBC News,khomeini,30.416290384085492,3.485884580989307e-8,16,0
+BBC News vs other two,BBC News,cost,29.640817369951574,5.199837216363079e-8,35,14
+BBC News vs other two,BBC News,steve,-84.19573173429978,0,2,169
+BBC News vs other two,BBC News,kornacki,-74.87983136155061,0,0,142
+BBC News vs other two,BBC News,cnn,-43.727782253877365,3.7737590830033696e-11,0,83
+BBC News vs other two,BBC News,night,-38.61787919968806,5.154457971556781e-10,1,78
+BBC News vs other two,BBC News,abdul,-37.649456671441655,8.467025969238762e-10,3,85
+BBC News vs other two,BBC News,nbc,-31.599185281027093,1.895090773196273e-8,0,60
+BBC News vs other two,BBC News,love,-29.595744529224856,5.322165508303556e-8,17,120
+BBC News vs other two,BBC News,michigan,-25.46378828875254,4.507645128271065e-7,1,53
+BBC News vs other two,BBC News,polls,-25.26804539925226,4.98906023604917e-7,36,167
+BBC News vs other two,BBC News,00,-21.059600491262007,4.452165185520052e-6,0,40
+BBC News vs other two,BBC News,fake,-20.368591970523305,6.386951003189978e-6,10,77
+BBC News vs other two,BBC News,cam,-19.479225706358537,1.0169975486085114e-5,0,37
+BBC News vs other two,BBC News,guy,-17.02087306680332,3.697114962109005e-5,11,73
+BBC News vs other two,BBC News,fraud,-16.42650461973765,5.057312229239663e-5,2,40
+BBC News vs other two,BBC News,mail,-14.9753287311752,1.0892601814593839e-4,1,33
+CNN vs other two,CNN,cnn,102.06074412120022,0,73,10
+CNN vs other two,CNN,hegseth,61.048150537208755,5.551115123125783e-15,54,13
+CNN vs other two,CNN,mail,57.40439828951245,3.552713678800501e-14,33,1
+CNN vs other two,CNN,ukraine,48.610455790953814,3.1220581675484027e-12,80,43
+CNN vs other two,CNN,trump,47.80579670840581,4.7060133567811135e-12,563,710
+CNN vs other two,CNN,russia,42.03956798982106,8.944511797892574e-11,71,39
+CNN vs other two,CNN,mail_in,36.15819315615587,1.8193196948956825e-9,25,3
+CNN vs other two,CNN,shit,33.334617069984326,7.758913067590356e-9,18,0
+CNN vs other two,CNN,blame,32.177950190289714,1.4067826570318687e-8,42,18
+CNN vs other two,CNN,voted,31.220727006570048,2.302940393938968e-8,82,61
+CNN vs other two,CNN,2025,30.76959603396177,2.905547846765444e-8,22,3
+CNN vs other two,CNN,ukrainian,27.202033675916557,1.8326580064620401e-7,20,3
+CNN vs other two,CNN,russia's,26.036285096197464,3.350605544127916e-7,16,1
+CNN vs other two,CNN,invasion,24.20016565186923,8.682481263955211e-7,15,1
+CNN vs other two,CNN,maga,24.176827444414123,8.788336054443846e-7,95,86
+CNN vs other two,CNN,steve,-83.57364495672644,0,3,168
+CNN vs other two,CNN,kornacki,-70.81718889744066,0,2,140
+CNN vs other two,CNN,abdul,-44.56172753824511,2.46462850128637e-11,1,87
+CNN vs other two,CNN,bbc,-27.027391069382155,2.005927257631157e-7,0,50
+CNN vs other two,CNN,iran,-26.772357300626048,2.2888816653132693e-7,52,210
+CNN vs other two,CNN,nbc,-26.564690325311908,2.5485937626967825e-7,2,58
+CNN vs other two,CNN,uk,-22.81649959824037,1.7822900143515952e-6,2,51
+CNN vs other two,CNN,00,-21.618565291973365,3.3261666162465175e-6,0,40
+CNN vs other two,CNN,michigan,-20.675420151198388,5.440999770622845e-6,3,51
+CNN vs other two,CNN,cam,-19.99624413315557,7.759442531285465e-6,0,37
+CNN vs other two,CNN,coverage,-18.914780411525502,1.36689519220079e-5,0,35
+CNN vs other two,CNN,usa,-18.57459970807718,1.633830840075401e-5,24,113
+CNN vs other two,CNN,night,-17.447883383095135,2.9529289594210084e-5,10,69
+CNN vs other two,CNN,wins,-16.954185477446018,3.829280296729909e-5,2,40
+CNN vs other two,CNN,us,-15.64198452128403,7.653628998960382e-5,106,305
+Comment publication: after vs before,after,iran,97.00789735295255,0,222,39
+Comment publication: after vs before,after,war,79.82404884349442,0,280,78
+Comment publication: after vs before,after,kornacki,74.74157951524074,0,129,13
+Comment publication: after vs before,after,steve,64.82713579821701,7.771561172376096e-16,146,25
+Comment publication: after vs before,after,night,57.37252369094738,3.608224830031759e-14,76,2
+Comment publication: after vs before,after,hegseth,44.95191626512818,2.019329148339466e-11,64,3
+Comment publication: after vs before,after,ukraine,35.00137022476486,3.294733930125915e-9,100,23
+Comment publication: after vs before,after,00,33.04532615920146,9.00352237209745e-9,40,0
+Comment publication: after vs before,after,cam,30.565495795346862,3.227834566299492e-8,37,0
+Comment publication: after vs before,after,israel,28.876470826101563,7.714436034422789e-8,60,9
+Comment publication: after vs before,after,blame,24.65620867210521,6.852363800824435e-7,52,8
+Comment publication: after vs before,after,russia,24.368427431761123,7.956201305558963e-7,86,24
+Comment publication: after vs before,after,nuclear,22.711757026015814,1.8821276783764773e-6,42,5
+Comment publication: after vs before,after,watched,22.30107111950156,2.3307656390469944e-6,27,0
+Comment publication: after vs before,after,won,20.624741305281837,5.5869418990051045e-6,62,15
+Comment publication: after vs before,after,vote,-455.798203840298,0,78,547
+Comment publication: after vs before,after,polls,-136.83891699587622,0,27,172
+Comment publication: after vs before,after,blue,-89.15746346939365,0,58,180
+Comment publication: after vs before,after,voting,-52.13286236073414,5.186961971048731e-13,37,110
+Comment publication: after vs before,after,red,-46.69480578367943,8.294809283881932e-12,25,86
+Comment publication: after vs before,after,fake,-45.48318265916966,1.5395462682477046e-11,16,70
+Comment publication: after vs before,after,interview,-35.68833431519489,2.3154640427236473e-9,1,32
+Comment publication: after vs before,after,republican,-33.95890690005951,5.628841615035185e-9,51,109
+Comment publication: after vs before,after,republicans,-33.67077755333644,6.5273929594766855e-9,101,170
+Comment publication: after vs before,after,believe,-30.590690656704876,3.186188757275943e-8,39,89
+Comment publication: after vs before,after,win,-30.3041461399463,3.6933557767682146e-8,57,112
+Comment publication: after vs before,after,5000,-28.441842677167994,9.65557372945014e-8,1,26
+Comment publication: after vs before,after,abdul,-26.908395569353136,2.1333017696800738e-7,24,64
+Comment publication: after vs before,after,u.s,-24.383218734411884,7.895346455510932e-7,19,54
+Comment publication: after vs before,after,polling,-24.308571567094443,8.207302906182434e-7,5,31
+NBC News vs other two,NBC News,steve,359.31845903435067,0,166,5
+NBC News vs other two,NBC News,kornacki,311.97055875984927,0,140,2
+NBC News vs other two,NBC News,abdul,175.79471369324153,0,84,4
+NBC News vs other two,NBC News,nbc,124.31800130324925,0,58,2
+NBC News vs other two,NBC News,night,115.54457206150869,0,68,11
+NBC News vs other two,NBC News,michigan,98.53202327359081,0,50,4
+NBC News vs other two,NBC News,00,91.40501145799887,0,40,0
+NBC News vs other two,NBC News,cam,84.54570871947016,0,37,0
+NBC News vs other two,NBC News,coverage,67.37113643302547,2.220446049250313e-16,33,2
+NBC News vs other two,NBC News,polls,65.98583007312013,4.440892098500626e-16,115,88
+NBC News vs other two,NBC News,el-sayed,57.570055897241154,3.26405569239796e-14,27,1
+NBC News vs other two,NBC News,interview,56.976997188198375,4.4075854077618715e-14,30,3
+NBC News vs other two,NBC News,love,53.285444453811515,2.8843594179761567e-13,81,56
+NBC News vs other two,NBC News,amazing,46.98484169958053,7.153833081474659e-12,27,4
+NBC News vs other two,NBC News,watched,43.54998959083729,4.132660880173944e-11,24,3
+NBC News vs other two,NBC News,trump,-140.45370798139302,0,195,1078
+NBC News vs other two,NBC News,war,-61.3662370624221,4.773959005888173e-15,41,317
+NBC News vs other two,NBC News,world,-58.591049002522745,1.942890293094024e-14,19,223
+NBC News vs other two,NBC News,iran,-48.52953085394981,3.2535085736640212e-12,28,234
+NBC News vs other two,NBC News,russia,-42.65998181486167,6.513123373963481e-11,2,108
+NBC News vs other two,NBC News,ukraine,-40.51765131719656,1.9484780455769624e-10,5,118
+NBC News vs other two,NBC News,us,-36.46886488019142,1.5512445772358774e-9,69,342
+NBC News vs other two,NBC News,maga,-32.26644014154353,1.3441496360400151e-8,20,161
+NBC News vs other two,NBC News,hegseth,-26.560451487075795,2.554191763648461e-7,1,66
+NBC News vs other two,NBC News,military,-24.075448960334835,9.263384821434073e-7,4,75
+NBC News vs other two,NBC News,putin,-23.9473761865114,9.900512983884724e-7,3,70
+NBC News vs other two,NBC News,bbc,-21.911140055086676,2.855713276295191e-6,0,50
+NBC News vs other two,NBC News,russian,-21.289081412367402,3.949748234477468e-6,2,59
+NBC News vs other two,NBC News,president,-19.202256694334384,1.1757431650716299e-5,46,211
+NBC News vs other two,NBC News,regime,-17.8272711397896,2.418913657642463e-5,2,51
+Video publication: after vs before,after,iran,101.67523094868666,0,222,40
+Video publication: after vs before,after,war,86.75780530925432,0,280,78
+Video publication: after vs before,after,kornacki,78.83425227994105,0,129,13
+Video publication: after vs before,after,steve,66.53434921752785,3.3306690738754696e-16,145,26
+Video publication: after vs before,after,night,54.01032420556824,1.9939605522267811e-13,75,4
+Video publication: after vs before,after,hegseth,47.10899010916673,6.714739875235409e-12,64,3
+Video publication: after vs before,after,ukraine,37.66699430224918,8.391242145577849e-10,100,23
+Video publication: after vs before,after,00,34.46055736422805,4.3497703217099115e-9,40,0
+Video publication: after vs before,after,cam,31.874535091168205,1.6445913075813223e-8,37,0
+Video publication: after vs before,after,israel,30.664758633353696,3.066849374455671e-8,60,9
+Video publication: after vs before,after,russia,26.488884360970978,2.6505891426165107e-7,86,24
+Video publication: after vs before,after,blame,26.198083734922566,3.081281438888084e-7,52,8
+Video publication: after vs before,after,nuclear,24.013349575157047,9.567007652755422e-7,42,5
+Video publication: after vs before,after,watched,23.256195456944038,1.4179294148819466e-6,27,0
+Video publication: after vs before,after,putin,19.442084430726997,1.0369670641940942e-5,58,15
+Video publication: after vs before,after,vote,-473.83401195353264,0,72,572
+Video publication: after vs before,after,polls,-133.92425164629168,0,27,176
+Video publication: after vs before,after,blue,-89.94893686306915,0,57,186
+Video publication: after vs before,after,voting,-70.5599709499358,0,29,120
+Video publication: after vs before,after,red,-50.05451081025383,1.4953593918676233e-12,24,91
+Video publication: after vs before,after,fake,-46.669274356572274,8.403611140295197e-12,15,72
+Video publication: after vs before,after,mail,-39.510635256314465,3.262776715473592e-10,0,34
+Video publication: after vs before,after,interview,-34.14477793565722,5.116034929031343e-9,1,32
+Video publication: after vs before,after,republicans,-32.892577041956805,9.739444029044364e-9,100,174
+Video publication: after vs before,after,republican,-32.61945696651764,1.1208703076803772e-8,50,110
+Video publication: after vs before,after,win,-32.595171328697845,1.1349637341062646e-8,56,118
+Video publication: after vs before,after,believe,-28.719553734981794,8.365479031713363e-8,39,90
+Video publication: after vs before,after,mail_in,-28.354063264578865,1.0103451519860585e-7,1,27
+Video publication: after vs before,after,5000,-27.196995696584324,1.837439751462e-7,1,26
+Video publication: after vs before,after,cheat,-27.196995696584324,1.837439751462e-7,1,26

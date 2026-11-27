@@ -1,0 +1,5 @@
+period,order,reported_total,returned,duplicates,unique
+before,relevance,1000000,100,7,93
+before,viewCount,1000000,100,0,100
+after,relevance,1000000,100,3,97
+after,viewCount,1000000,100,0,100

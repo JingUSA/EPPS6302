@@ -1,0 +1,2 @@
+n,matches,agreement,expected_agreement,cohen_kappa,reference
+40,15,0.375,0.3175,0.08424908424908424,AI-assisted coding; student review required

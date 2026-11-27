@@ -1,0 +1,62 @@
+{
+  "provenance": "Public manifest reconstructed from Stage 1 console, Stage 2 scripts and uploaded coverage audit; not the original local JSON.",
+  "source": "YouTube Data API v3 via tuber 3.0.0",
+  "credential": "API key, not included",
+  "search_term": "US midterm election",
+  "period": "after",
+  "published_after_utc": "2026-11-04T00:00:00Z",
+  "published_before_utc": "2026-11-27T00:43:16Z",
+  "collection_date_local": "2026-11-26",
+  "delete_by": "2026-12-26",
+  "searches": [
+    {
+      "period": "after",
+      "order": "relevance",
+      "reported_total": 1000000,
+      "returned": 100,
+      "duplicates": 3,
+      "unique": 97
+    },
+    {
+      "period": "after",
+      "order": "viewCount",
+      "reported_total": 1000000,
+      "returned": 100,
+      "duplicates": 0,
+      "unique": 100
+    }
+  ],
+  "channels": [
+    "BBC News",
+    "CNN",
+    "NBC News"
+  ],
+  "title_filter": "\\b(midterms?|elections?|senate|house\\s+(race|majority|control|of representatives)|ballots?|vot(e|es|ed|ing|ers?)|congress(ional)?)\\b",
+  "selection": "Three high-view candidates screened for US midterm relevance per channel and period; not selected by comment availability.",
+  "comment_order": "tuber get_all_comments default; not a random sample",
+  "max_comments_per_video": 300,
+  "n_videos": 9,
+  "n_comments": 2700,
+  "video_ids": [
+    "Pp5HAuHIUTs",
+    "rVYnYzeY-9A",
+    "xbgtOgYVGJM",
+    "1TpMeZUrH1M",
+    "0cPRdwHWf64",
+    "8ndxlUvsQ8U",
+    "b043z24ErQk",
+    "NOZL0wdrJJI",
+    "hY2pr51lw4M"
+  ],
+  "comment_collected_at_utc": [
+    "2026-11-27T00:51:15Z",
+    "2026-11-27T00:51:20Z",
+    "2026-11-27T00:51:27Z",
+    "2026-11-27T00:51:46Z",
+    "2026-11-27T00:51:51Z",
+    "2026-11-27T00:51:56Z",
+    "2026-11-27T00:52:16Z",
+    "2026-11-27T00:52:20Z",
+    "2026-11-27T00:52:25Z"
+  ]
+}
